@@ -5,6 +5,7 @@ import (
 	"encoding/json/v2"
 	"errors"
 	"fmt"
+	"io/fs"
 	"log"
 	"net/http"
 	"os"
@@ -264,7 +265,7 @@ func (c *Core[B]) prepareSQLDBClients() error {
 }
 
 // PrepareSQLDatabases for SQL DB Clients & RawSQL Stores, etc
-func (c *Core[B]) PrepareSQLDatabases(ensureImports func()) error {
+func (c *Core[B]) PrepareSQLDatabases(sqlFS fs.FS) error {
 	// Load SQL Databases Config File
 	err := c.loadSQLDBConfs()
 	if err != nil {
@@ -283,18 +284,14 @@ func (c *Core[B]) PrepareSQLDatabases(ensureImports func()) error {
 		return err
 	}
 
-	// Load Raw Statements to Stores
-	if ensureImports != nil {
-		ensureImports()
-	}
 	if _, ok := DBTypesSet["mysql"]; ok {
-		err = mysql.LoadRawStmtsToStore()
+		err = mysql.LoadRawStmtsToStore(sqlFS)
 		if err != nil {
 			return err
 		}
 	}
 	if _, ok := DBTypesSet["pgsql"]; ok {
-		err = pgsql.LoadRawStmtsToStore()
+		err = pgsql.LoadRawStmtsToStore(sqlFS)
 		if err != nil {
 			return err
 		}

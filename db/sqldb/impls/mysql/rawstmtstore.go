@@ -2,6 +2,7 @@ package mysql
 
 import (
 	"fmt"
+	"io/fs"
 	"log"
 	"path/filepath"
 	"strings"
@@ -11,47 +12,52 @@ import (
 
 var rawStmtStore = sqldb.NewRawStore()
 
-// LoadRawStmtsToStore
-// WARNING: Ensure required imports beforehand
-func LoadRawStmtsToStore() error {
-	groupCnt := 0
+func LoadRawStmtsToStore(sqlFS fs.FS) error {
 	stmtCnt := 0
-	for _, groupFS := range sqldb.RawStoreRegistry {
-		files, err := groupFS.FS.ReadDir("sql")
+	err := fs.WalkDir(sqlFS, ".", func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
-			return fmt.Errorf("failed to read embedded `sql` dir. %w", err)
+			// error reading a directory
+			return err
 		}
-		for _, f := range files {
-			if f.IsDir() {
-				continue
-			}
-			filename := f.Name()
-			ext := filepath.Ext(filename)
-			name := strings.TrimSuffix(filename, ext)
-			ext = strings.TrimPrefix(ext, ".")
-			data, err := groupFS.FS.ReadFile(filepath.Join("sql", filename))
-			if err != nil {
-				return fmt.Errorf("failed to read %s: %w", filename, err)
-			}
-			groupedStmtKey := sqldb.StoreGroupedStmtKey{Group: groupFS.Group, StmtName: name}.String()
+		if d.IsDir() {
+			// Skip directory itself. still walking into it.
+			return nil
+		}
+		ext := filepath.Ext(path) // with the leading dot
+		if ext == "" {
+			return nil
+		}
+		plainExt := strings.TrimPrefix(ext, ".")
+		if plainExt != DBType && plainExt != "sql" {
+			return nil
+		}
+		data, err := fs.ReadFile(sqlFS, path)
+		if err != nil {
+			return fmt.Errorf("failed to read %s: %w", path, err)
+		}
+		// Build key ("foo/bar/find" → "foo.bar.find")
+		// fs.FS always stores paths using forward slashes '/', regardless of the OS.
+		key := strings.TrimSuffix(path, ext)
+		key = strings.TrimPrefix(key, "./") // just in case that fs is not an embed.fs
+		key = strings.ReplaceAll(key, "/", ".")
 
-			switch ext {
-			case DBType:
-				// exact matching file extension -> use it as-is for dialects
-				rawStmtStore.Set(groupedStmtKey, string(data))
-				stmtCnt++
-			case "sql":
-				// Standard SQL
-				// with Placeholders: `?` (static) and `??` (dynamic)
-				if _, exists := rawStmtStore.Get(groupedStmtKey); !exists {
-					// Convert static placeholders
-					rawStmtStore.Set(groupedStmtKey, string(data))
-					stmtCnt++
-				}
-			}
+		if plainExt == DBType {
+			// exact matching file extension -> use it as-is for dialects
+			rawStmtStore.Set(key, string(data))
+			stmtCnt++
+			return nil
 		}
-		groupCnt++
+		// *.sql (Standard SQL) fallback
+		if _, exists := rawStmtStore.Get(key); !exists {
+			// Placeholders: `?` (static) and `??` (dynamic) -> No conversion needed
+			rawStmtStore.Set(key, string(data))
+			stmtCnt++
+		}
+		return nil
+	})
+	if err != nil {
+		return err
 	}
-	log.Printf("[INFO][%s] %d sql raw stmts loaded for %d groups", DBType, stmtCnt, groupCnt)
+	log.Printf("[INFO][%s] %d sql raw stmts loaded", DBType, stmtCnt)
 	return nil
 }
