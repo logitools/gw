@@ -9,8 +9,8 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/logitools/gw/responses"
 	"github.com/logitools/gw/security"
+	"github.com/logitools/gw/web/responses"
 )
 
 type Client struct {

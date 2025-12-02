@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"runtime/debug"
 
-	"github.com/logitools/gw/responses"
+	"github.com/logitools/gw/web/responses"
 )
 
 func RecoverWrapper(inner http.Handler) http.Handler {
