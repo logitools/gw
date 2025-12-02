@@ -23,7 +23,7 @@ func (s *Service) Name() string {
 	return "WebService"
 }
 
-func NewService(parentCtx context.Context, addr string, router http.Handler) *Service {
+func NewService(parentCtx context.Context, addr string, httpHandler http.Handler) *Service {
 	svcCtx, svcCancel := context.WithCancel(parentCtx)
 	return &Service{
 		Ctx:    svcCtx,
@@ -32,7 +32,7 @@ func NewService(parentCtx context.Context, addr string, router http.Handler) *Se
 		done:   make(chan error, 1),
 		Server: &http.Server{
 			Addr:    addr,
-			Handler: router,
+			Handler: httpHandler,
 		},
 	}
 }

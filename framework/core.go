@@ -168,8 +168,8 @@ func (c *Core[B]) PrepareUDSService(cmdStore *uds.CommandStore) error {
 	return nil
 }
 
-func (c *Core[B]) PrepareWebService(addr string, router http.Handler) {
-	c.WebService = web.NewService(c.RootCtx, addr, router)
+func (c *Core[B]) PrepareWebService(addr string, httpHandler http.Handler) {
+	c.WebService = web.NewService(c.RootCtx, addr, httpHandler)
 	c.AddService(c.WebService)
 }
 
