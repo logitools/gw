@@ -7,12 +7,12 @@ import (
 )
 
 type RouteGroup struct {
-	Router          // [Embedded Interface]
+	Router          // [Embedded]
 	Prefix          string
 	HandlerWrappers []HandlerWrapper // Group Handler Wrappers
 }
 
-// Ensure RouteGroup[any] implements Router
+// Ensure RouteGroup implements Router
 var _ Router = (*RouteGroup)(nil)
 
 // Handle registers a route pattern
