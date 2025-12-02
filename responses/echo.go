@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/logitools/gw/requests"
+	"github.com/logitools/gw/web/requests"
 )
 
 type EchoHandler struct {
