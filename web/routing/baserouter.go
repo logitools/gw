@@ -9,8 +9,8 @@ type BaseRouter struct {
 // Ensure BaseRouter[any] implements Router
 var _ Router = (*BaseRouter)(nil)
 
-// ServeHTTP
-// = ServeMux.ServeHTTP [Promoted]
+// ServeHTTP = ServeMux.ServeHTTP [Promoted]
+// -> This will call the route-matched handler's ServeHTTP
 
 // Handle registers a route pattern
 func (r *BaseRouter) Handle(pattern string, handler http.Handler, handlerWrappers ...HandlerWrapper) {
