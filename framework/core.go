@@ -252,6 +252,7 @@ func (c *Core[B]) prepareSQLDBClients() error {
 
 	// Prepare New Clients
 	for dbName, sqlDBConf := range c.SQLDBConfs {
+		log.Printf("[INFO][SQLDB] preparing %q", dbName)
 		dbClient, err := sqldb.New(sqlDBConf.Type, sqlDBConf)
 		if err != nil {
 			return err
