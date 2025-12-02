@@ -8,7 +8,7 @@ import (
 	"github.com/logitools/gw/web/responses"
 )
 
-func RecoverWrapper(inner http.Handler) http.Handler {
+func RecoverPanic(inner http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if rec := recover(); rec != nil {
