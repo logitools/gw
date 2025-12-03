@@ -2,7 +2,7 @@ package responses
 
 import (
 	"bytes"
-	jsonv1 "encoding/json"
+	"encoding/json/v2"
 	"fmt"
 	"io"
 	"log"
@@ -15,8 +15,6 @@ import (
 type EchoHandler struct {
 	MaxMemoryMB int64
 }
-
-// ToDo: Use json/v2
 
 func (h *EchoHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	resPayload := map[string]any{
@@ -42,29 +40,33 @@ func (h *EchoHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rBodyPayload := make(map[string]interface{})
-	rBodyPayload["raw"] = string(rBodyBytes)
+	rBodyPayload := map[string]any{
+		"raw": string(rBodyBytes),
+	}
 
+	// reset body (rewind)
 	// Since we already consumed r.OriginalData with io.ReadAll(r.OriginalData),
 	// Reassign r.OriginalData to a No-op closer Reader on a copied buffer like rewinding r.OriginalData
 	r.Body = io.NopCloser(bytes.NewReader(rBodyBytes))
 
 	rContentType := r.Header.Get("Content-Type")
 
-	switch true {
-
+	switch {
 	case strings.HasPrefix(rContentType, "application/json"):
-		if jsonv1.Valid(rBodyBytes) {
-			rBodyPayload["json"] = jsonv1.RawMessage(rBodyBytes)
+		var tmp any
+		if err = json.Unmarshal(rBodyBytes, &tmp); err == nil {
+			// valid JSON
+			rBodyPayload["json"] = string(rBodyBytes)
+		} else {
+			// invalid JSON
+			rBodyPayload["json_error"] = err.Error()
 		}
-
 	case strings.HasPrefix(rContentType, "application/x-www-form-urlencoded"):
 		if err = r.ParseForm(); err == nil {
 			rBodyPayload["form"] = r.PostForm
 		} else {
 			rBodyPayload["form_error"] = err.Error()
 		}
-
 	case strings.HasPrefix(rContentType, "multipart/form-data"):
 		if err = r.ParseMultipartForm(h.MaxMemoryMB << 20); err == nil {
 			rBodyPayload["form"] = r.PostForm
@@ -72,8 +74,8 @@ func (h *EchoHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		} else {
 			rBodyPayload["form_error"] = err.Error()
 		}
-
 	}
+
 	resPayload["body"] = rBodyPayload
 	EncodeWriteJSON(w, http.StatusOK, resPayload)
 }
