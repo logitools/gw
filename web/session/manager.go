@@ -74,8 +74,8 @@ func (m *Manager) RemoveWebSessionCookie(w http.ResponseWriter) {
 	})
 }
 
-// CreateWebLoginSession creates a Session in Key-value Database and Returns its Session ID
-func (m *Manager) CreateWebLoginSession(ctx context.Context, accessToken string, refreshToken string, uidStr string) (string, error) {
+// CreateWebLoginSessionForBackendAPI creates a Session in Key-value Database and Returns its Session ID
+func (m *Manager) CreateWebLoginSessionForBackendAPI(ctx context.Context, accessToken string, refreshToken string, uidStr string) (string, error) {
 	webSessionID, err := GenerateWebSessionID()
 	if err != nil {
 		return "", err
@@ -145,26 +145,25 @@ func (m *Manager) CreateWebLoginSession(ctx context.Context, accessToken string,
 	return webSessionID, nil
 }
 
-func (m *Manager) GetWebLoginSessionInfoByKVDBKey(ctx context.Context, key string) (*login.WebLoginSessionInfo, error) {
+func (m *Manager) KVDBKeyToWebLoginSessionInfoWithBackendAPI(ctx context.Context, key string) (*login.WebLoginSessionInfoWithBackendAPI, error) {
 	sessionData, err := m.BackendKVDBClient.GetAllFields(ctx, key)
 	if err != nil {
 		return nil, err
 	}
-
 	accessToken, ok1 := sessionData["access_token"]
 	refreshToken, ok2 := sessionData["refresh_token"]
 	uidStr, ok3 := sessionData["uid"]
 	if !ok1 || !ok2 || !ok3 {
 		return nil, errors.New("invalid session data")
 	}
-	return &login.WebLoginSessionInfo{
+	return &login.WebLoginSessionInfoWithBackendAPI{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 		UserIDStr:    uidStr,
 	}, nil
 }
 
-func (m *Manager) GetWebLoginSessionInfoBySessionId(ctx context.Context, sessionId string) (*login.WebLoginSessionInfo, error) {
+func (m *Manager) SessionIDToWebLoginSessionInfoWithBackendAPI(ctx context.Context, sessionId string) (*login.WebLoginSessionInfoWithBackendAPI, error) {
 	key := m.WebSessionIDToKVDBKey(sessionId)
-	return m.GetWebLoginSessionInfoByKVDBKey(ctx, key)
+	return m.KVDBKeyToWebLoginSessionInfoWithBackendAPI(ctx, key)
 }

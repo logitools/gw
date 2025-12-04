@@ -9,7 +9,7 @@ type ClientAppConf struct {
 	ExpireRefreshSliding int       `json:"expire_refresh_sliding"`
 	ExpireRefreshHardcap int       `json:"expire_refresh_hardcap"`
 	MaxSessionsPerUser   int64     `json:"max_sessions_per_user"` // Max # of Service Sessions (Concurrent Connections) per User per ClientApp. 0 = unlimited
-	ExtAuthSecret        string    `json:"ext_auth_secret"`       // External Auth Service Secret
+	ExtAuthSecret        string    `json:"ext_auth_secret"`       // External Auth Service Secret // ToDo: make this map[string]string for multiple IdP's
 	DebugOpts            DebugOpts `json:"debug_opts"`
 }
 
