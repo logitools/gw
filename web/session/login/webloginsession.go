@@ -7,7 +7,7 @@ type WebLoginSessionInfoWithBackendAPI struct {
 	Key          string `json:"-"`
 }
 
-type WebLoginSessionInfoSimple struct {
+type WebLoginSessionInfoUID struct {
 	UserIDStr string `json:"uid"`
 	Key       string `json:"-"`
 }
