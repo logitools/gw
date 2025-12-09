@@ -25,7 +25,7 @@ func (m *Manager) WebSessionIDToKVDBKey(sessionID string) string {
 	return m.AppName + "_wsession:" + sessionID
 }
 
-func (m *Manager) FindWebSessionInKVDB(ctx context.Context, sessionID string) (bool, error) {
+func (m *Manager) WebSessionExistsInKVDB(ctx context.Context, sessionID string) (bool, error) {
 	return m.BackendKVDBClient.Exists(ctx, m.WebSessionIDToKVDBKey(sessionID))
 }
 
@@ -38,7 +38,7 @@ func (m *Manager) CheckWebSessionFromCookie(ctx context.Context, r *http.Request
 	if err != nil {
 		return false
 	}
-	found, err := m.FindWebSessionInKVDB(ctx, string(webSessionId))
+	found, err := m.WebSessionExistsInKVDB(ctx, string(webSessionId))
 	if err != nil {
 		return false
 	}
