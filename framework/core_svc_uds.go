@@ -8,7 +8,7 @@ import (
 	"github.com/logitools/gw/uds"
 )
 
-func (c *Core[B]) PrepareUDSService(cmdStore *uds.CommandStore) error {
+func (c *Core) PrepareUDSService(cmdStore *uds.CommandStore) error {
 	confFilePath := filepath.Join(c.AppRoot, "config", ".uds.json")
 	confBytes, err := os.ReadFile(confFilePath) // ([]byte, error)
 	if err != nil {

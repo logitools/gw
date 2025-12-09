@@ -10,7 +10,7 @@ import (
 
 var once sync.Once
 
-func (c *Core[B]) startShutdownSignalListener() {
+func (c *Core) startShutdownSignalListener() {
 	once.Do(func() {
 		sigs := make(chan os.Signal, 1)
 		signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)

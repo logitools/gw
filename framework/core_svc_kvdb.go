@@ -9,7 +9,7 @@ import (
 	"github.com/logitools/gw/db/kvdb/impls/redis"
 )
 
-func (c *Core[B]) PrepareKVDatabase() error {
+func (c *Core) PrepareKVDatabase() error {
 	// Load KV Database Config File
 	err := c.loadKVDBConf()
 	if err != nil {
@@ -21,7 +21,7 @@ func (c *Core[B]) PrepareKVDatabase() error {
 	return nil
 }
 
-func (c *Core[B]) loadKVDBConf() error {
+func (c *Core) loadKVDBConf() error {
 	confFilePath := filepath.Join(c.AppRoot, "config", ".kv-databases.json")
 	confBytes, err := os.ReadFile(confFilePath) // ([]byte, error)
 	if err != nil {
@@ -33,7 +33,7 @@ func (c *Core[B]) loadKVDBConf() error {
 	return nil
 }
 
-func (c *Core[B]) prepareKVDBClient() error {
+func (c *Core) prepareKVDBClient() error {
 	switch c.KVDBConf.Type {
 	case "redis":
 		c.BackendKVDBClient = &redis.Client{Conf: &c.KVDBConf}

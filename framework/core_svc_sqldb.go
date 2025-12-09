@@ -12,7 +12,7 @@ import (
 	"github.com/logitools/gw/db/sqldb/impls/pgsql"
 )
 
-func (c *Core[B]) loadSQLDBConfs() error {
+func (c *Core) loadSQLDBConfs() error {
 	confFilePath := filepath.Join(c.AppRoot, "config", ".sql-databases.json")
 	confBytes, err := os.ReadFile(confFilePath) // ([]byte, error)
 	if err != nil {
@@ -27,7 +27,7 @@ func (c *Core[B]) loadSQLDBConfs() error {
 
 // prepareSQLDBClients - Build & Init SQL DB Clients
 // Use after loadSQLDBConfs
-func (c *Core[B]) prepareSQLDBClients() error {
+func (c *Core) prepareSQLDBClients() error {
 	c.BackendSQLDBClients = make(map[string]sqldb.Client)
 
 	// Registering Supported Implementations
@@ -50,7 +50,7 @@ func (c *Core[B]) prepareSQLDBClients() error {
 }
 
 // PrepareSQLDatabases for SQL DB Clients & RawSQL Stores, etc
-func (c *Core[B]) PrepareSQLDatabases(sqlFS fs.FS) error {
+func (c *Core) PrepareSQLDatabases(sqlFS fs.FS) error {
 	// Load SQL Databases Config File
 	err := c.loadSQLDBConfs()
 	if err != nil {

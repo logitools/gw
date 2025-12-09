@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 )
 
-func (c *Core[B]) LoadStorageConf() error {
+func (c *Core) LoadStorageConf() error {
 	confFilePath := filepath.Join(c.AppRoot, "config", ".storages.json")
 	confBytes, err := os.ReadFile(confFilePath) // ([]byte, error)
 	if err != nil {

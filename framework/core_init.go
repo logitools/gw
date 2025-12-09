@@ -14,7 +14,7 @@ import (
 // 2. load config/.core.json file
 // 3. prepare base fields
 // 4. Start ShutdownSignalListener
-func (c *Core[B]) BaseInit(appRoot string, rootCtx context.Context, rootCancel context.CancelFunc) error {
+func (c *Core) BaseInit(appRoot string, rootCtx context.Context, rootCancel context.CancelFunc) error {
 	c.AppRoot = appRoot
 	// Load .env.json
 	envFilePath := filepath.Join(appRoot, "config", ".core.json")
@@ -33,7 +33,7 @@ func (c *Core[B]) BaseInit(appRoot string, rootCtx context.Context, rootCancel c
 	return nil
 }
 
-func (c *Core[B]) prepareDefaultFeatures() {
+func (c *Core) prepareDefaultFeatures() {
 	c.VolatileKV = &sync.Map{}
 	c.SessionLocks = &sync.Map{}
 	c.BackendHttpClient = &http.Client{}

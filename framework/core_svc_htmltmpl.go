@@ -6,7 +6,7 @@ import (
 	"github.com/logitools/gw/tpl"
 )
 
-func (c *Core[B]) PrepareHTMLTemplateStore() error {
+func (c *Core) PrepareHTMLTemplateStore() error {
 	c.HTMLTemplateStore = tpl.NewHTMLTemplateStore()
 	return c.HTMLTemplateStore.LoadBaseTemplates(
 		filepath.Join(c.AppRoot, "templates", "html"),

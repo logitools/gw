@@ -14,7 +14,7 @@ import (
 // PrepareWebSessions prepares WebSessionManager
 // Prerequisite: BackendKVDBClient
 // Prerequisite: SessionLocks
-func (c *Core[B]) PrepareWebSessions() error {
+func (c *Core) PrepareWebSessions() error {
 	confFilePath := filepath.Join(c.AppRoot, "config", ".web-session.json")
 	confBytes, err := os.ReadFile(confFilePath) // ([]byte, error)
 	if err != nil {

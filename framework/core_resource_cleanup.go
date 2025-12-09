@@ -4,7 +4,7 @@ import (
 	"log"
 )
 
-func (c *Core[B]) ResourceCleanUp() {
+func (c *Core) ResourceCleanUp() {
 	log.Println("[INFO] App Resource Cleaning Up...")
 	// Clean up DB clients ----
 	// ToDo: factor out this

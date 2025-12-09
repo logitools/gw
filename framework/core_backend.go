@@ -11,7 +11,7 @@ import (
 
 // PrepareMainBackendClient to Send Request to the Main Backend API if any
 // Prerequisite: BackendHttpClient
-func (c *Core[B]) PrepareMainBackendClient() error {
+func (c *Core) PrepareMainBackendClient() error {
 	confFilePath := filepath.Join(c.AppRoot, "config", ".main-backend-api.json")
 	confBytes, err := os.ReadFile(confFilePath) // ([]byte, error)
 	if err != nil {

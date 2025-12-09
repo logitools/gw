@@ -22,8 +22,7 @@ import (
 )
 
 // Core - common config
-// B = Throttle BucketID Type _ e.g. string, int64, etc
-type Core[B comparable] struct {
+type Core struct {
 	AppName             string                                           `json:"app_name"`
 	Listen              string                                           `json:"listen"`     // HTTP Application Listen IP:PORT Address
 	Host                string                                           `json:"host"`       // HTTP Host. Can be used to generate public url endpoints
@@ -53,13 +52,13 @@ type Core[B comparable] struct {
 	done     chan error
 }
 
-func (c *Core[B]) AddService(s svc.Service) {
+func (c *Core) AddService(s svc.Service) {
 	log.Printf("[INFO] adding service: %s", s.Name())
 	c.services = append(c.services, s)
 	log.Printf("[INFO] total services: %d", len(c.services))
 }
 
-func (c *Core[B]) StartServices() error {
+func (c *Core) StartServices() error {
 	c.done = make(chan error, len(c.services))
 	for _, s := range c.services {
 		err := s.Start()
@@ -74,7 +73,7 @@ func (c *Core[B]) StartServices() error {
 	return nil
 }
 
-func (c *Core[B]) WaitServicesDone() error {
+func (c *Core) WaitServicesDone() error {
 	for i := 0; i < len(c.services); i++ {
 		if err := <-c.done; err != nil {
 			return err
@@ -83,7 +82,7 @@ func (c *Core[B]) WaitServicesDone() error {
 	return nil
 }
 
-func (c *Core[B]) StopServices() {
+func (c *Core) StopServices() {
 	for _, s := range c.services {
 		s.Stop()
 	}
