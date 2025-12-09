@@ -228,8 +228,3 @@ func (m *Manager) KVDBKeyToWebLoginSessionInfoUID(ctx context.Context, key strin
 		UserIDStr: uidStr,
 	}, nil
 }
-
-func (m *Manager) SessionIDToWebLoginSessionInfoWithBackendAPI(ctx context.Context, sessionId string) (*login.WebLoginSessionInfoWithBackendAPI, error) {
-	key := m.WebSessionIDToKVDBKey(sessionId)
-	return m.KVDBKeyToWebLoginSessionInfoWithBackendAPI(ctx, key)
-}
