@@ -5,21 +5,21 @@ import (
 	"time"
 )
 
-type BucketGroup[K comparable] struct {
+type BucketGroup struct {
 	conf    *BucketConf
-	buckets *sync.Map // K -> *Bucket[K]
+	buckets *sync.Map // string -> *Bucket
 }
 
-func (g *BucketGroup[K]) GetBucket(id K) (*Bucket[K], bool) {
+func (g *BucketGroup) GetBucket(id string) (*Bucket, bool) {
 	bAny, ok := g.buckets.Load(id)
 	if !ok {
 		return nil, false
 	}
-	return bAny.(*Bucket[K]), true
+	return bAny.(*Bucket), true
 }
 
-func (g *BucketGroup[K]) SetBucket(id K, tokens int, now time.Time) {
-	g.buckets.Store(id, &Bucket[K]{
+func (g *BucketGroup) SetBucket(id string, tokens int, now time.Time) {
+	g.buckets.Store(id, &Bucket{
 		tokens:      tokens,
 		lastCheck:   now,
 		parentGroup: g,

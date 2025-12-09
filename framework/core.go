@@ -34,7 +34,7 @@ type Core[B comparable] struct {
 	UDSService          *uds.Service                                     `json:"-"`          // PrepareUDSService
 	JobScheduler        *schedjobs.Scheduler                             `json:"-"`          // PrepareJobScheduler
 	WebService          *web.Service                                     `json:"-"`          // PrepareWebService
-	ThrottleBucketStore *throttle.BucketStore[B]                         `json:"-"`          // PrepareThrottleBucketStore
+	ThrottleBucketStore *throttle.BucketStore                            `json:"-"`          // PrepareThrottleBucketStore
 	VolatileKV          *sync.Map                                        `json:"-"`          // map[string]string
 	SessionLocks        *sync.Map                                        `json:"-"`          // map[string]*sync.Mutex for ServiceSessions and WebSessions
 	ActionLocks         *sync.Map                                        `json:"-"`          // map[string]struct{}
