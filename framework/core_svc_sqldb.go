@@ -27,6 +27,7 @@ func (c *Core) loadSQLDBConfs() error {
 
 // prepareSQLDBClients - Build & Init SQL DB Clients
 // Use after loadSQLDBConfs
+// [WARNING] sqldb.New needs to be closed. e.g. func (c *Core) ResourceCleanUp()
 func (c *Core) prepareSQLDBClients() error {
 	c.BackendSQLDBClients = make(map[string]sqldb.Client)
 
