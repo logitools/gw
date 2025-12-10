@@ -1,4 +1,4 @@
-package routing
+package web
 
 import "net/http"
 

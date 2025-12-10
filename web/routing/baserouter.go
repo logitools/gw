@@ -1,6 +1,10 @@
 package routing
 
-import "net/http"
+import (
+	"net/http"
+
+	"github.com/logitools/gw/web"
+)
 
 type BaseRouter struct {
 	*http.ServeMux // Embedded
@@ -13,7 +17,7 @@ var _ Router = (*BaseRouter)(nil)
 // -> This will call the route-matched handler's ServeHTTP
 
 // Handle registers a route pattern
-func (r *BaseRouter) Handle(pattern string, handler http.Handler, handlerWrappers ...HandlerWrapper) {
+func (r *BaseRouter) Handle(pattern string, handler http.Handler, handlerWrappers ...web.HandlerWrapper) {
 	wrappedHandler := handler
 	for i := len(handlerWrappers) - 1; i >= 0; i-- {
 		wrappedHandler = handlerWrappers[i].Wrap(wrappedHandler)
@@ -21,12 +25,12 @@ func (r *BaseRouter) Handle(pattern string, handler http.Handler, handlerWrapper
 	r.ServeMux.Handle(pattern, wrappedHandler)
 }
 
-func (r *BaseRouter) HandleFunc(pattern string, handleFunc func(http.ResponseWriter, *http.Request), handlerWrappers ...HandlerWrapper) {
+func (r *BaseRouter) HandleFunc(pattern string, handleFunc func(http.ResponseWriter, *http.Request), handlerWrappers ...web.HandlerWrapper) {
 	r.Handle(pattern, http.HandlerFunc(handleFunc), handlerWrappers...)
 }
 
 // Group lets you register routes under a common Prefix + middleware.
-func (r *BaseRouter) Group(prefix string, batch func(*RouteGroup), handlerWrappers ...HandlerWrapper) *RouteGroup {
+func (r *BaseRouter) Group(prefix string, batch func(*RouteGroup), handlerWrappers ...web.HandlerWrapper) *RouteGroup {
 	g := &RouteGroup{
 		Router:          r,
 		Prefix:          prefix,

@@ -4,19 +4,21 @@ import (
 	"log"
 	"net/http"
 	"strings"
+
+	"github.com/logitools/gw/web"
 )
 
 type RouteGroup struct {
 	Router          // [Embedded]
 	Prefix          string
-	HandlerWrappers []HandlerWrapper // Group Handler Wrappers
+	HandlerWrappers []web.HandlerWrapper // Group Handler Wrappers
 }
 
 // Ensure RouteGroup implements Router
 var _ Router = (*RouteGroup)(nil)
 
 // Handle registers a route pattern
-func (g *RouteGroup) Handle(subpattern string, handler http.Handler, handlerWrappers ...HandlerWrapper) {
+func (g *RouteGroup) Handle(subpattern string, handler http.Handler, handlerWrappers ...web.HandlerWrapper) {
 	var (
 		subPatternParts []string
 		subpath         string
@@ -77,7 +79,7 @@ func (g *RouteGroup) Handle(subpattern string, handler http.Handler, handlerWrap
 	g.Router.Handle(fullPattern, wrappedHandler)
 }
 
-func (g *RouteGroup) HandleFunc(subpattern string, handleFunc func(http.ResponseWriter, *http.Request), handlerWrappers ...HandlerWrapper) {
+func (g *RouteGroup) HandleFunc(subpattern string, handleFunc func(http.ResponseWriter, *http.Request), handlerWrappers ...web.HandlerWrapper) {
 	g.Handle(subpattern, http.HandlerFunc(handleFunc), handlerWrappers...)
 }
 
@@ -91,7 +93,7 @@ func (g *RouteGroup) HandleFunc(subpattern string, handleFunc func(http.Response
 //	    foobaz.Handle("POST bam", foobazbamPostHandler)  // "POST /foo/baz/bam"
 //	  }
 //	}
-func (g *RouteGroup) Group(subPrefix string, batch func(*RouteGroup), handlerWrappers ...HandlerWrapper) *RouteGroup {
+func (g *RouteGroup) Group(subPrefix string, batch func(*RouteGroup), handlerWrappers ...web.HandlerWrapper) *RouteGroup {
 	subg := &RouteGroup{
 		Router:          g.Router,                                      // same router
 		Prefix:          g.Prefix + subPrefix,                          // extended prefix
