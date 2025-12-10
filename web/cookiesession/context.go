@@ -1,4 +1,4 @@
-package session
+package cookiesession
 
 import "context"
 
@@ -12,4 +12,8 @@ func WebSessionIdFromContext(ctx context.Context) (string, bool) {
 	ctxVal := ctx.Value(idCtxKey{})
 	val, ok := ctxVal.(string)
 	return val, ok
+}
+
+func IDCtxInjector(ctx context.Context, sessionID string) (context.Context, error) {
+	return WithWebSessionId(ctx, sessionID), nil
 }

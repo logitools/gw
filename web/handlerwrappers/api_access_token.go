@@ -12,13 +12,12 @@ import (
 )
 
 type APIAccessToken struct {
-	AppProvider       func() framework.Application
-	UserIDCtxInjector contxt.InjectorFunc[string]
+	AppProvider func() framework.Application
+	CtxInjector contxt.InjectorFunc[string]
 }
 
 // Wrap is a middleware func
 // Extracts the Access Token from the request header "Authorization", and Find it in the KVDB.
-// If found, Injects the UID into the request context
 func (m *APIAccessToken) Wrap(inner http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Pre-action
@@ -44,7 +43,7 @@ func (m *APIAccessToken) Wrap(inner http.Handler) http.Handler {
 			return
 		}
 
-		ctx, err = m.UserIDCtxInjector(ctx, uidStr)
+		ctx, err = m.CtxInjector(ctx, uidStr)
 		if err != nil {
 			responses.WriteSimpleErrorJSON(w, http.StatusInternalServerError, fmt.Sprintf("failed to parse uid. %v", err))
 			return

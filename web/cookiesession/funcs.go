@@ -1,4 +1,4 @@
-package session
+package cookiesession
 
 import (
 	"crypto/rand"

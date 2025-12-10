@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 
 	"github.com/logitools/gw/security"
-	"github.com/logitools/gw/web/session"
+	"github.com/logitools/gw/web/cookiesession"
 )
 
 // PrepareWebSessions prepares WebSessionManager
@@ -26,7 +26,7 @@ func (c *Core) PrepareWebSessions() error {
 	if c.SessionLocks == nil {
 		return errors.New("sessionlocks not ready")
 	}
-	mgr := &session.Manager{
+	mgr := &cookiesession.Manager{
 		AppName:           c.AppName,
 		BackendKVDBClient: c.BackendKVDBClient,
 		SessionLocks:      c.SessionLocks,

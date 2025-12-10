@@ -1,4 +1,4 @@
-package session
+package cookiesession
 
 import (
 	"context"
@@ -10,7 +10,7 @@ import (
 
 	"github.com/logitools/gw/db/kvdb"
 	"github.com/logitools/gw/security"
-	"github.com/logitools/gw/web/session/login"
+	"github.com/logitools/gw/web/cookiesession/login"
 )
 
 type Manager struct {

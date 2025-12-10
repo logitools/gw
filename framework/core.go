@@ -18,7 +18,7 @@ import (
 	"github.com/logitools/gw/tpl"
 	"github.com/logitools/gw/uds"
 	"github.com/logitools/gw/web"
-	"github.com/logitools/gw/web/session"
+	"github.com/logitools/gw/web/cookiesession"
 )
 
 // Core - common config
@@ -44,7 +44,7 @@ type Core struct {
 	SQLDBConfs          map[string]*sqldb.Conf                           `json:"-"`          // loadSQLDBConfs
 	BackendSQLDBClients map[string]sqldb.Client                          `json:"-"`          // prepareSQLDBClients
 	ClientApps          atomic.Pointer[map[string]clients.ClientAppConf] `json:"-"`          // [Hot Reload] PrepareClientApps
-	WebSessionManager   *session.Manager                                 `json:"-"`          // PrepareWebSessions
+	WebSessionManager   *cookiesession.Manager                           `json:"-"`          // PrepareWebSessions
 	MainBackendClient   *mainbackend.Client                              `json:"-"`          // PrepareMainBackendClient
 	HTMLTemplateStore   *tpl.HTMLTemplateStore                           `json:"-"`          // PrepareHTMLTemplateStore
 

@@ -1,4 +1,4 @@
-package session
+package cookiesession
 
 type Conf struct {
 	EncryptionKey string `json:"enckey"`
