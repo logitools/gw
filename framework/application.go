@@ -1,5 +1,5 @@
 package framework
 
-type Application[B comparable] interface {
+type Application interface {
 	AppCore() *Core
 }
