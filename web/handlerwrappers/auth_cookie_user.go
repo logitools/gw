@@ -1,21 +1,25 @@
 package handlerwrappers
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
+	"github.com/logitools/gw/contxt"
 	"github.com/logitools/gw/framework"
 	"github.com/logitools/gw/web/cookiesession"
 	"github.com/logitools/gw/web/responses"
 )
 
-type AuthCookie struct {
-	AppProvider func() framework.Application
+type AuthCookieUser struct {
+	AppProvider    func() framework.Application
+	UIDStrProvider func(context.Context, string) (string, bool, error)
+	CtxInjector    contxt.BinaryInjectorFunc[string, string]
 }
 
 // Wrap middleware func
 // Extracts the Session Cookie from the request and Decrypt it to the Session ID, and Find it in the KVDB.
-func (m *AuthCookie) Wrap(inner http.Handler) http.Handler {
+func (m *AuthCookieUser) Wrap(inner http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		appCore := m.AppProvider().AppCore()
 		ctx := r.Context()
@@ -30,19 +34,19 @@ func (m *AuthCookie) Wrap(inner http.Handler) http.Handler {
 			http.Redirect(w, r, webSessionMgr.Conf.LoginPath+"?endpoint=protected", http.StatusSeeOther)
 			return
 		}
-		sessionIDBytes, err := webSessionMgr.Cipher.DecodeDecrypt(sessionCookie.Value)
+		sessionIdBytes, err := webSessionMgr.Cipher.DecodeDecrypt(sessionCookie.Value)
 		if err != nil {
 			responses.WriteSimpleErrorJSON(w, http.StatusUnauthorized, fmt.Sprintf("invalid session. %v", err))
 			return
 		}
-		sessionID := string(sessionIDBytes)
+		sessionID := string(sessionIdBytes)
 
-		found, err := webSessionMgr.WebSessionExistsInKVDB(ctx, sessionID)
+		uidStr, ok, err := m.UIDStrProvider(ctx, sessionID)
 		if err != nil {
-			responses.WriteSimpleErrorJSON(w, http.StatusInternalServerError, fmt.Sprintf("failed to check session. %v", err))
+			responses.WriteSimpleErrorJSON(w, http.StatusInternalServerError, fmt.Sprintf("failed to get session uid. %v", err))
 			return
 		}
-		if !found {
+		if !ok {
 			// Session Expired. Redirect to Login page Clearing Session Cookie
 			webSessionMgr.RemoveWebSessionCookie(w)
 			cookiesession.SetCookie(w, r, 60)
@@ -51,7 +55,11 @@ func (m *AuthCookie) Wrap(inner http.Handler) http.Handler {
 		}
 
 		// new context for the next handler
-		ctx = cookiesession.WithWebSessionId(ctx, sessionID)
+		ctx, err = m.CtxInjector(ctx, sessionID, uidStr)
+		if err != nil {
+			responses.WriteSimpleErrorJSON(w, http.StatusInternalServerError, fmt.Sprintf("failed to inject data to the context. %v", err))
+			return
+		}
 
 		// Inner
 		inner.ServeHTTP(w, r.WithContext(ctx))

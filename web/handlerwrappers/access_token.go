@@ -13,7 +13,7 @@ import (
 
 type AccessToken struct {
 	AppProvider func() framework.Application
-	CtxInjector contxt.InjectorFunc[string]
+	CtxInjector contxt.UnaryInjectorFunc[string]
 }
 
 // Wrap is a middleware func

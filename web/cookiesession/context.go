@@ -1,6 +1,8 @@
 package cookiesession
 
-import "context"
+import (
+	"context"
+)
 
 type idCtxKey struct{}
 
@@ -12,8 +14,4 @@ func WebSessionIdFromContext(ctx context.Context) (string, bool) {
 	ctxVal := ctx.Value(idCtxKey{})
 	val, ok := ctxVal.(string)
 	return val, ok
-}
-
-func IDCtxInjector(ctx context.Context, sessionID string) (context.Context, error) {
-	return WithWebSessionId(ctx, sessionID), nil
 }
