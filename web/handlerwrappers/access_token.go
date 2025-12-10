@@ -11,14 +11,14 @@ import (
 	"github.com/logitools/gw/web/responses"
 )
 
-type APIAccessToken struct {
+type AccessToken struct {
 	AppProvider func() framework.Application
 	CtxInjector contxt.InjectorFunc[string]
 }
 
 // Wrap is a middleware func
 // Extracts the Access Token from the request header "Authorization", and Find it in the KVDB.
-func (m *APIAccessToken) Wrap(inner http.Handler) http.Handler {
+func (m *AccessToken) Wrap(inner http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Pre-action
 		appCore := m.AppProvider().AppCore()
