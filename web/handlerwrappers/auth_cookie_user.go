@@ -43,7 +43,7 @@ func (m *AuthCookieUser) Wrap(inner http.Handler) http.Handler {
 
 		uidStr, err := m.UIDStrProvider(ctx, sessionID)
 		if err != nil {
-			// Error or Not Found (Session Expired)
+			// Error or Not Found (maybe Session Expired)
 			// Redirect to Login page Clearing Session Cookie
 			webSessionMgr.RemoveWebSessionCookie(w)
 			cookiesession.SetCookie(w, r, 60)
