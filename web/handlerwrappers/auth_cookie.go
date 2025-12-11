@@ -51,7 +51,7 @@ func (m *AuthCookie) Wrap(inner http.Handler) http.Handler {
 		}
 
 		// new context for the next handler
-		ctx = cookiesession.WithWebSessionId(ctx, sessionID)
+		ctx = cookiesession.ContextWithSessionID(ctx, sessionID)
 
 		// Inner
 		inner.ServeHTTP(w, r.WithContext(ctx))

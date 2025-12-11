@@ -9,18 +9,18 @@ import (
 
 type idCtxKey struct{}
 
-func WithWebSessionId(ctx context.Context, webSessionID string) context.Context {
-	return context.WithValue(ctx, idCtxKey{}, webSessionID)
+func ContextWithSessionID(ctx context.Context, sessionID string) context.Context {
+	return context.WithValue(ctx, idCtxKey{}, sessionID)
 }
 
-func WebSessionIdFromContext(ctx context.Context) (string, bool) {
+func SessionIDFromContext(ctx context.Context) (string, bool) {
 	ctxVal := ctx.Value(idCtxKey{})
 	val, ok := ctxVal.(string)
 	return val, ok
 }
 
 func SessionIDToInt64UIDCtxInjector(ctx context.Context, sessionID string, uidStr string) (context.Context, error) {
-	ctx = WithWebSessionId(ctx, sessionID)
+	ctx = ContextWithSessionID(ctx, sessionID)
 	uid, err := strconv.ParseInt(uidStr, 10, 64)
 	if err != nil {
 		return nil, err
