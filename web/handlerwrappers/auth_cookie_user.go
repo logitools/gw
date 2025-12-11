@@ -20,8 +20,8 @@ type AuthCookieUser struct {
 // Wrap middleware func
 // Extracts the Session Cookie from the request and Decrypt it to the Session ID, and Find it in the KVDB.
 func (m *AuthCookieUser) Wrap(inner http.Handler) http.Handler {
+	appCore := m.AppProvider().AppCore()
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		appCore := m.AppProvider().AppCore()
 		ctx := r.Context()
 		webSessionMgr := appCore.WebSessionManager
 		// If Logged-in, Session Cookie must be shipped in the request

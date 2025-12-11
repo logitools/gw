@@ -19,9 +19,9 @@ type AccessToken struct {
 // Wrap is a middleware func
 // Extracts the Access Token from the request header "Authorization", and Find it in the KVDB.
 func (m *AccessToken) Wrap(inner http.Handler) http.Handler {
+	appCore := m.AppProvider().AppCore()
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Pre-action
-		appCore := m.AppProvider().AppCore()
 		ctx := r.Context()
 		// check the access access_token
 		accessToken := security.ExtractBearerToken(r.Header.Get("Authorization")) // string
