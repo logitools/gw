@@ -10,7 +10,7 @@ import (
 )
 
 type ThrottleIP struct {
-	AppProvider   func() framework.Application
+	AppProvider   framework.AppProviderFunc
 	BucketGroupID string
 }
 

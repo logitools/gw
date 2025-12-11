@@ -12,7 +12,7 @@ import (
 )
 
 type AuthCookieUser struct {
-	AppProvider    func() framework.Application
+	AppProvider    framework.AppProviderFunc
 	UIDStrProvider func(context.Context, string) (string, bool, error)
 	CtxInjector    contxt.BinaryInjectorFunc[string, string]
 }

@@ -10,7 +10,7 @@ import (
 )
 
 type APIClients struct {
-	AppProvider func() framework.Application
+	AppProvider framework.AppProviderFunc
 	ClientIDs   map[string]struct{} // specific clients only. If nil, any clients
 }
 

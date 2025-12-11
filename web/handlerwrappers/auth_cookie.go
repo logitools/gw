@@ -10,7 +10,7 @@ import (
 )
 
 type AuthCookie struct {
-	AppProvider func() framework.Application
+	AppProvider framework.AppProviderFunc
 }
 
 // Wrap middleware func
