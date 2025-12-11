@@ -13,7 +13,7 @@ import (
 
 type AuthCookieUser struct {
 	AppProvider    framework.AppProviderFunc
-	UIDStrProvider func(context.Context, string) (string, bool, error)
+	UIDStrProvider func(context.Context, string) (string, error)
 	CtxInjector    contxt.BinaryInjectorFunc[string, string]
 }
 
@@ -41,13 +41,10 @@ func (m *AuthCookieUser) Wrap(inner http.Handler) http.Handler {
 		}
 		sessionID := string(sessionIdBytes)
 
-		uidStr, ok, err := m.UIDStrProvider(ctx, sessionID)
+		uidStr, err := m.UIDStrProvider(ctx, sessionID)
 		if err != nil {
-			responses.WriteSimpleErrorJSON(w, http.StatusInternalServerError, fmt.Sprintf("failed to get session uid. %v", err))
-			return
-		}
-		if !ok {
-			// Session Expired. Redirect to Login page Clearing Session Cookie
+			// Error or Not Found (Session Expired)
+			// Redirect to Login page Clearing Session Cookie
 			webSessionMgr.RemoveWebSessionCookie(w)
 			cookiesession.SetCookie(w, r, 60)
 			http.Redirect(w, r, webSessionMgr.Conf.LoginPath+"?session=expired", http.StatusSeeOther)
