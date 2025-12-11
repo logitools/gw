@@ -2,6 +2,7 @@ package authuser
 
 import (
 	"context"
+	"errors"
 	"strconv"
 )
 
@@ -27,4 +28,12 @@ func StrToInt64UIDCtxInjector(ctx context.Context, uidStr string) (context.Conte
 		return nil, err
 	}
 	return WithUserID[int64](ctx, uid), nil
+}
+
+func UidStrFromCtxInt64UID(ctx context.Context) (string, error) {
+	UserID, ok := UserIdFromContext[int64](ctx)
+	if !ok {
+		return "", errors.New("no UserID in Context")
+	}
+	return strconv.FormatInt(UserID, 10), nil
 }
