@@ -13,7 +13,7 @@ import (
 
 type AuthCookieUser struct {
 	AppProvider       framework.AppProviderFunc
-	SessionIDToUIDStr func(context.Context, *framework.Core, string) (string, error)
+	SessionIDToUIDStr func(context.Context, *cookiesession.Manager, string) (string, error)
 	CtxInjector       contxt.BinaryInjectorFunc[string, string]
 }
 
@@ -23,7 +23,7 @@ func (m *AuthCookieUser) Wrap(inner http.Handler) http.Handler {
 	appCore := m.AppProvider().AppCore()
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		webSessionMgr := appCore.WebSessionManager
+		cookieSessionMgr := appCore.WebSessionManager
 		// If Logged-in, Session Cookie must be shipped in the request
 		sessionCookie, err := r.Cookie(cookiesession.CookieName)
 		if err != nil { // http.ErrNoCookie
@@ -31,23 +31,23 @@ func (m *AuthCookieUser) Wrap(inner http.Handler) http.Handler {
 			// Redirect to Login page setting Intended URI Cookie
 			// ToDo: flash msg "Login Required"
 			cookiesession.SetCookie(w, r, 60)
-			http.Redirect(w, r, webSessionMgr.Conf.LoginPath+"?endpoint=protected", http.StatusSeeOther)
+			http.Redirect(w, r, cookieSessionMgr.Conf.LoginPath+"?endpoint=protected", http.StatusSeeOther)
 			return
 		}
-		sessionIdBytes, err := webSessionMgr.Cipher.DecodeDecrypt(sessionCookie.Value)
+		sessionIdBytes, err := cookieSessionMgr.Cipher.DecodeDecrypt(sessionCookie.Value)
 		if err != nil {
 			responses.WriteSimpleErrorJSON(w, http.StatusUnauthorized, fmt.Sprintf("invalid session. %v", err))
 			return
 		}
 		sessionID := string(sessionIdBytes)
 
-		uidStr, err := m.SessionIDToUIDStr(ctx, appCore, sessionID)
+		uidStr, err := m.SessionIDToUIDStr(ctx, cookieSessionMgr, sessionID)
 		if err != nil {
 			// Error or Not Found (maybe Session Expired)
 			// Redirect to Login page Clearing Session Cookie
-			webSessionMgr.RemoveWebSessionCookie(w)
+			cookieSessionMgr.RemoveWebSessionCookie(w)
 			cookiesession.SetCookie(w, r, 60)
-			http.Redirect(w, r, webSessionMgr.Conf.LoginPath+"?session=expired", http.StatusSeeOther)
+			http.Redirect(w, r, cookieSessionMgr.Conf.LoginPath+"?session=expired", http.StatusSeeOther)
 			return
 		}
 
