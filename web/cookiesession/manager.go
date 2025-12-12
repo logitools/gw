@@ -21,12 +21,12 @@ type Manager struct {
 	BackendKVDBClient kvdb.Client
 }
 
-func (m *Manager) WebSessionIDToKVDBKey(sessionID string) string {
+func (m *Manager) SessionIDToKVDBKey(sessionID string) string {
 	return m.AppName + "_wsession:" + sessionID
 }
 
 func (m *Manager) WebSessionExistsInKVDB(ctx context.Context, sessionID string) (bool, error) {
-	return m.BackendKVDBClient.Exists(ctx, m.WebSessionIDToKVDBKey(sessionID))
+	return m.BackendKVDBClient.Exists(ctx, m.SessionIDToKVDBKey(sessionID))
 }
 
 func (m *Manager) CheckWebSessionFromCookie(ctx context.Context, r *http.Request) bool {
@@ -83,7 +83,7 @@ func (m *Manager) CreateWebLoginSessionForBackendAPI(ctx context.Context, access
 	// Store session_id in KvDB with access_token and refresh_token
 	slidingExpiration := time.Duration(m.Conf.ExpireSliding) * time.Second
 	hardcapExpiration := time.Duration(m.Conf.ExpireHardcap) * time.Second
-	key := m.WebSessionIDToKVDBKey(webSessionID)
+	key := m.SessionIDToKVDBKey(webSessionID)
 	if err = m.BackendKVDBClient.SetFields(ctx, key, map[string]any{
 		"access_token":  accessToken,
 		"refresh_token": refreshToken,
@@ -130,7 +130,7 @@ func (m *Manager) CreateWebLoginSessionForBackendAPI(ctx context.Context, access
 			}
 			var keysToDel []string
 			for _, v := range sessionsToDel {
-				keysToDel = append(keysToDel, m.WebSessionIDToKVDBKey(v))
+				keysToDel = append(keysToDel, m.SessionIDToKVDBKey(v))
 			}
 			_, _ = m.BackendKVDBClient.Delete(ctx, keysToDel...)
 			if err = m.BackendKVDBClient.Trim(ctx, usrSessionListKey, diff, -1); err != nil {
@@ -152,7 +152,7 @@ func (m *Manager) CreateWebLoginSessionUID(ctx context.Context, uidStr string) (
 	// Store session_id in KvDB with access_token and refresh_token
 	slidingExpiration := time.Duration(m.Conf.ExpireSliding) * time.Second
 	hardcapExpiration := time.Duration(m.Conf.ExpireHardcap) * time.Second
-	key := m.WebSessionIDToKVDBKey(webSessionID)
+	key := m.SessionIDToKVDBKey(webSessionID)
 	if err = m.BackendKVDBClient.Set(ctx, key, uidStr, slidingExpiration); err != nil {
 		return "", err
 	}
@@ -188,7 +188,7 @@ func (m *Manager) CreateWebLoginSessionUID(ctx context.Context, uidStr string) (
 			}
 			var keysToDel []string
 			for _, v := range sessionsToDel {
-				keysToDel = append(keysToDel, m.WebSessionIDToKVDBKey(v))
+				keysToDel = append(keysToDel, m.SessionIDToKVDBKey(v))
 			}
 			_, _ = m.BackendKVDBClient.Delete(ctx, keysToDel...)
 			if err = m.BackendKVDBClient.Trim(ctx, usrSessionListKey, diff, -1); err != nil {
