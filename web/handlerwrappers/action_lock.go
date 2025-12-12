@@ -24,7 +24,7 @@ import (
 type ActionLock struct {
 	AppProvider        framework.AppProviderFunc
 	Actions            map[string]string
-	AuthUIDStrProvider func(context.Context) (string, error) // Optional. Required if any of targetKey = "AuthID"
+	AuthUIDStrProvider func(context.Context) (string, error) // Optional. Required if any of targetKey = "AuthUID"
 }
 
 func (m *ActionLock) Wrap(inner http.Handler) http.Handler {

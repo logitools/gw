@@ -13,7 +13,7 @@ import (
 
 type AuthCookieUser struct {
 	AppProvider       framework.AppProviderFunc
-	SessionIDToUIDStr func(context.Context, string) (string, error)
+	SessionIDToUIDStr func(context.Context, *framework.Core, string) (string, error)
 	CtxInjector       contxt.BinaryInjectorFunc[string, string]
 }
 
@@ -41,7 +41,7 @@ func (m *AuthCookieUser) Wrap(inner http.Handler) http.Handler {
 		}
 		sessionID := string(sessionIdBytes)
 
-		uidStr, err := m.SessionIDToUIDStr(ctx, sessionID)
+		uidStr, err := m.SessionIDToUIDStr(ctx, appCore, sessionID)
 		if err != nil {
 			// Error or Not Found (maybe Session Expired)
 			// Redirect to Login page Clearing Session Cookie
