@@ -10,7 +10,6 @@ import (
 
 	"github.com/logitools/gw/db/kvdb"
 	"github.com/logitools/gw/security"
-	"github.com/logitools/gw/web/cookiesession/login"
 )
 
 type Manager struct {
@@ -201,7 +200,7 @@ func (m *Manager) StoreSessionInKVDBAsSingleValueUID(ctx context.Context, uidStr
 	return cookieSessionID, nil
 }
 
-func (m *Manager) KVDBKeyToSessionInfoForBackendAPI(ctx context.Context, key string) (*login.WebLoginSessionInfoWithBackendAPI, error) {
+func (m *Manager) KVDBBackendAPIData(ctx context.Context, key string) (*KVDBBackendAPIData, error) {
 	sessionData, err := m.KVDBClient.GetAllFields(ctx, key)
 	if err != nil {
 		return nil, err
@@ -212,19 +211,19 @@ func (m *Manager) KVDBKeyToSessionInfoForBackendAPI(ctx context.Context, key str
 	if !ok1 || !ok2 || !ok3 {
 		return nil, errors.New("invalid session data")
 	}
-	return &login.WebLoginSessionInfoWithBackendAPI{
+	return &KVDBBackendAPIData{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 		UserIDStr:    uidStr,
 	}, nil
 }
 
-func (m *Manager) KVDBKeyToSessionInfoUID(ctx context.Context, key string) (*login.WebLoginSessionInfoUID, error) {
+func (m *Manager) KVDBUserIDData(ctx context.Context, key string) (*KVDBUserIDData, error) {
 	uidStr, ok, err := m.KVDBClient.Get(ctx, key)
 	if err != nil || !ok {
 		return nil, err
 	}
-	return &login.WebLoginSessionInfoUID{
+	return &KVDBUserIDData{
 		UserIDStr: uidStr,
 	}, nil
 }
