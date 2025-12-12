@@ -27,9 +27,9 @@ func (c *Core) PrepareCookieSessions() error {
 		return errors.New("sessionlocks not ready")
 	}
 	mgr := &cookiesession.Manager{
-		AppName:           c.AppName,
-		BackendKVDBClient: c.BackendKVDBClient,
-		SessionLocks:      c.SessionLocks,
+		AppName:      c.AppName,
+		KVDBClient:   c.BackendKVDBClient,
+		SessionLocks: c.SessionLocks,
 	}
 	if err = json.Unmarshal(confBytes, &mgr.Conf); err != nil {
 		return err

@@ -45,7 +45,7 @@ func (m *AuthCookieUser) Wrap(inner http.Handler) http.Handler {
 		if err != nil {
 			// Error or Not Found (maybe Session Expired)
 			// Redirect to Login page Clearing Session Cookie
-			cookieSessionMgr.RemoveWebSessionCookie(w)
+			cookieSessionMgr.RemoveSessionCookie(w)
 			cookiesession.SetCookie(w, r, 60)
 			http.Redirect(w, r, cookieSessionMgr.Conf.LoginPath+"?session=expired", http.StatusSeeOther)
 			return

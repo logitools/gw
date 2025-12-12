@@ -14,45 +14,45 @@ import (
 )
 
 type Manager struct {
-	Conf              Conf
-	Cipher            *security.XChaCha20Poly1305Cipher
-	AppName           string // for session key, etc.
-	SessionLocks      *sync.Map
-	BackendKVDBClient kvdb.Client
+	Conf         Conf
+	Cipher       *security.XChaCha20Poly1305Cipher
+	AppName      string // for session key, etc.
+	SessionLocks *sync.Map
+	KVDBClient   kvdb.Client
 }
 
 func (m *Manager) SessionIDToKVDBKey(sessionID string) string {
 	return m.AppName + "_wsession:" + sessionID
 }
 
-func (m *Manager) WebSessionExistsInKVDB(ctx context.Context, sessionID string) (bool, error) {
-	return m.BackendKVDBClient.Exists(ctx, m.SessionIDToKVDBKey(sessionID))
+func (m *Manager) SessionExistsInKVDB(ctx context.Context, sessionID string) (bool, error) {
+	return m.KVDBClient.Exists(ctx, m.SessionIDToKVDBKey(sessionID))
 }
 
-func (m *Manager) CheckWebSessionFromCookie(ctx context.Context, r *http.Request) bool {
-	webSessionCookie, err := r.Cookie(CookieName)
+func (m *Manager) CheckCookieSession(ctx context.Context, r *http.Request) bool {
+	sessionCookie, err := r.Cookie(CookieName)
 	if err != nil {
 		return false
 	}
-	webSessionId, err := m.Cipher.DecodeDecrypt(webSessionCookie.Value) // []byte
+	cookieSessionId, err := m.Cipher.DecodeDecrypt(sessionCookie.Value) // []byte
 	if err != nil {
 		return false
 	}
-	found, err := m.WebSessionExistsInKVDB(ctx, string(webSessionId))
+	found, err := m.SessionExistsInKVDB(ctx, string(cookieSessionId))
 	if err != nil {
 		return false
 	}
 	return found
 }
 
-func (m *Manager) SetWebSessionCookie(w http.ResponseWriter, webSessionId string) error {
-	encWebSessionId, err := m.Cipher.EncryptEncode([]byte(webSessionId))
+func (m *Manager) SetSessionCookie(w http.ResponseWriter, sessionID string) error {
+	encSessionID, err := m.Cipher.EncryptEncode([]byte(sessionID))
 	if err != nil {
 		return fmt.Errorf("failed to encrypt web login session id. %v", err)
 	}
 	http.SetCookie(w, &http.Cookie{
 		Name:  CookieName,
-		Value: encWebSessionId,
+		Value: encSessionID,
 		Path:  "/", // Subpaths will get this cookie.
 		// Domain: // Cannot be set with `__Host-`
 		HttpOnly: true, // JS cannot read it
@@ -63,7 +63,7 @@ func (m *Manager) SetWebSessionCookie(w http.ResponseWriter, webSessionId string
 	return nil
 }
 
-func (m *Manager) RemoveWebSessionCookie(w http.ResponseWriter) {
+func (m *Manager) RemoveSessionCookie(w http.ResponseWriter) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     CookieName,
 		Path:     "/",
@@ -74,24 +74,24 @@ func (m *Manager) RemoveWebSessionCookie(w http.ResponseWriter) {
 	})
 }
 
-// CreateWebLoginSessionForBackendAPI creates a Session in Key-value Database and Returns its Session ID
-func (m *Manager) CreateWebLoginSessionForBackendAPI(ctx context.Context, accessToken string, refreshToken string, uidStr string) (string, error) {
-	webSessionID, err := GenerateWebSessionID()
+// StoreSessionInKVDBForBackendAPI stores a session in KVDB for Backend API and returns the session ID
+func (m *Manager) StoreSessionInKVDBForBackendAPI(ctx context.Context, accessToken string, refreshToken string, uidStr string) (string, error) {
+	cookieSessionID, err := GenerateSessionID()
 	if err != nil {
 		return "", err
 	}
 	// Store session_id in KvDB with access_token and refresh_token
 	slidingExpiration := time.Duration(m.Conf.ExpireSliding) * time.Second
 	hardcapExpiration := time.Duration(m.Conf.ExpireHardcap) * time.Second
-	key := m.SessionIDToKVDBKey(webSessionID)
-	if err = m.BackendKVDBClient.SetFields(ctx, key, map[string]any{
+	key := m.SessionIDToKVDBKey(cookieSessionID)
+	if err = m.KVDBClient.SetFields(ctx, key, map[string]any{
 		"access_token":  accessToken,
 		"refresh_token": refreshToken,
 		"uid":           uidStr,
 	}); err != nil {
 		return "", err
 	}
-	ok, err := m.BackendKVDBClient.Expire(ctx, key, slidingExpiration)
+	ok, err := m.KVDBClient.Expire(ctx, key, slidingExpiration)
 	if err != nil {
 		return "", err
 	}
@@ -115,16 +115,16 @@ func (m *Manager) CreateWebLoginSessionForBackendAPI(ctx context.Context, access
 		//	env.SessionLocks.Delete(usrSessionListKey)
 		//}()
 
-		if err = m.BackendKVDBClient.Push(ctx, usrSessionListKey, webSessionID); err != nil {
+		if err = m.KVDBClient.Push(ctx, usrSessionListKey, cookieSessionID); err != nil {
 			return "", err
 		}
-		sessionCnt, err := m.BackendKVDBClient.Len(ctx, usrSessionListKey)
+		sessionCnt, err := m.KVDBClient.Len(ctx, usrSessionListKey)
 		if err != nil {
 			return "", err
 		}
 		if sessionCnt > m.Conf.MaxCntPerUser {
 			diff := sessionCnt - m.Conf.MaxCntPerUser
-			sessionsToDel, err := m.BackendKVDBClient.Range(ctx, usrSessionListKey, 0, diff-1) // []string
+			sessionsToDel, err := m.KVDBClient.Range(ctx, usrSessionListKey, 0, diff-1) // []string
 			if err != nil {
 				return "", err
 			}
@@ -132,28 +132,28 @@ func (m *Manager) CreateWebLoginSessionForBackendAPI(ctx context.Context, access
 			for _, v := range sessionsToDel {
 				keysToDel = append(keysToDel, m.SessionIDToKVDBKey(v))
 			}
-			_, _ = m.BackendKVDBClient.Delete(ctx, keysToDel...)
-			if err = m.BackendKVDBClient.Trim(ctx, usrSessionListKey, diff, -1); err != nil {
+			_, _ = m.KVDBClient.Delete(ctx, keysToDel...)
+			if err = m.KVDBClient.Trim(ctx, usrSessionListKey, diff, -1); err != nil {
 				return "", err
 			}
-			_, _ = m.BackendKVDBClient.Expire(ctx, usrSessionListKey, hardcapExpiration)
+			_, _ = m.KVDBClient.Expire(ctx, usrSessionListKey, hardcapExpiration)
 		}
 	}
 
-	return webSessionID, nil
+	return cookieSessionID, nil
 }
 
-// CreateWebLoginSessionUID creates a Session in Key-value Database and Returns its Session ID
-func (m *Manager) CreateWebLoginSessionUID(ctx context.Context, uidStr string) (string, error) {
-	webSessionID, err := GenerateWebSessionID()
+// StoreSessionInKVDBAsSingleValueUID stores a session in KVDB as a single value UID and Returns the session ID
+func (m *Manager) StoreSessionInKVDBAsSingleValueUID(ctx context.Context, uidStr string) (string, error) {
+	cookieSessionID, err := GenerateSessionID()
 	if err != nil {
 		return "", err
 	}
 	// Store session_id in KvDB with access_token and refresh_token
 	slidingExpiration := time.Duration(m.Conf.ExpireSliding) * time.Second
 	hardcapExpiration := time.Duration(m.Conf.ExpireHardcap) * time.Second
-	key := m.SessionIDToKVDBKey(webSessionID)
-	if err = m.BackendKVDBClient.Set(ctx, key, uidStr, slidingExpiration); err != nil {
+	key := m.SessionIDToKVDBKey(cookieSessionID)
+	if err = m.KVDBClient.Set(ctx, key, uidStr, slidingExpiration); err != nil {
 		return "", err
 	}
 
@@ -173,16 +173,16 @@ func (m *Manager) CreateWebLoginSessionUID(ctx context.Context, uidStr string) (
 		//	env.SessionLocks.Delete(usrSessionListKey)
 		//}()
 
-		if err = m.BackendKVDBClient.Push(ctx, usrSessionListKey, webSessionID); err != nil {
+		if err = m.KVDBClient.Push(ctx, usrSessionListKey, cookieSessionID); err != nil {
 			return "", err
 		}
-		sessionCnt, err := m.BackendKVDBClient.Len(ctx, usrSessionListKey)
+		sessionCnt, err := m.KVDBClient.Len(ctx, usrSessionListKey)
 		if err != nil {
 			return "", err
 		}
 		if sessionCnt > m.Conf.MaxCntPerUser {
 			diff := sessionCnt - m.Conf.MaxCntPerUser
-			sessionsToDel, err := m.BackendKVDBClient.Range(ctx, usrSessionListKey, 0, diff-1) // []string
+			sessionsToDel, err := m.KVDBClient.Range(ctx, usrSessionListKey, 0, diff-1) // []string
 			if err != nil {
 				return "", err
 			}
@@ -190,19 +190,19 @@ func (m *Manager) CreateWebLoginSessionUID(ctx context.Context, uidStr string) (
 			for _, v := range sessionsToDel {
 				keysToDel = append(keysToDel, m.SessionIDToKVDBKey(v))
 			}
-			_, _ = m.BackendKVDBClient.Delete(ctx, keysToDel...)
-			if err = m.BackendKVDBClient.Trim(ctx, usrSessionListKey, diff, -1); err != nil {
+			_, _ = m.KVDBClient.Delete(ctx, keysToDel...)
+			if err = m.KVDBClient.Trim(ctx, usrSessionListKey, diff, -1); err != nil {
 				return "", err
 			}
-			_, _ = m.BackendKVDBClient.Expire(ctx, usrSessionListKey, hardcapExpiration)
+			_, _ = m.KVDBClient.Expire(ctx, usrSessionListKey, hardcapExpiration)
 		}
 	}
 
-	return webSessionID, nil
+	return cookieSessionID, nil
 }
 
-func (m *Manager) KVDBKeyToWebLoginSessionInfoWithBackendAPI(ctx context.Context, key string) (*login.WebLoginSessionInfoWithBackendAPI, error) {
-	sessionData, err := m.BackendKVDBClient.GetAllFields(ctx, key)
+func (m *Manager) KVDBKeyToSessionInfoForBackendAPI(ctx context.Context, key string) (*login.WebLoginSessionInfoWithBackendAPI, error) {
+	sessionData, err := m.KVDBClient.GetAllFields(ctx, key)
 	if err != nil {
 		return nil, err
 	}
@@ -219,8 +219,8 @@ func (m *Manager) KVDBKeyToWebLoginSessionInfoWithBackendAPI(ctx context.Context
 	}, nil
 }
 
-func (m *Manager) KVDBKeyToWebLoginSessionInfoUID(ctx context.Context, key string) (*login.WebLoginSessionInfoUID, error) {
-	uidStr, ok, err := m.BackendKVDBClient.Get(ctx, key)
+func (m *Manager) KVDBKeyToSessionInfoUID(ctx context.Context, key string) (*login.WebLoginSessionInfoUID, error) {
+	uidStr, ok, err := m.KVDBClient.Get(ctx, key)
 	if err != nil || !ok {
 		return nil, err
 	}

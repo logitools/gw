@@ -19,7 +19,7 @@ func (m *AuthCookie) Wrap(inner http.Handler) http.Handler {
 	appCore := m.AppProvider().AppCore()
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		webSessionMgr := appCore.CookieSessionManager
+		cookieSessionMgr := appCore.CookieSessionManager
 		// If Logged-in, Session Cookie must be shipped in the request
 		sessionCookie, err := r.Cookie(cookiesession.CookieName)
 		if err != nil { // http.ErrNoCookie
@@ -27,26 +27,26 @@ func (m *AuthCookie) Wrap(inner http.Handler) http.Handler {
 			// Redirect to Login page setting Intended URI Cookie
 			// ToDo: flash msg "Login Required"
 			cookiesession.SetCookie(w, r, 60)
-			http.Redirect(w, r, webSessionMgr.Conf.LoginPath+"?endpoint=protected", http.StatusSeeOther)
+			http.Redirect(w, r, cookieSessionMgr.Conf.LoginPath+"?endpoint=protected", http.StatusSeeOther)
 			return
 		}
-		sessionIDBytes, err := webSessionMgr.Cipher.DecodeDecrypt(sessionCookie.Value)
+		sessionIDBytes, err := cookieSessionMgr.Cipher.DecodeDecrypt(sessionCookie.Value)
 		if err != nil {
 			responses.WriteSimpleErrorJSON(w, http.StatusUnauthorized, fmt.Sprintf("invalid session. %v", err))
 			return
 		}
 		sessionID := string(sessionIDBytes)
 
-		found, err := webSessionMgr.WebSessionExistsInKVDB(ctx, sessionID)
+		found, err := cookieSessionMgr.SessionExistsInKVDB(ctx, sessionID)
 		if err != nil {
 			responses.WriteSimpleErrorJSON(w, http.StatusInternalServerError, fmt.Sprintf("failed to check session. %v", err))
 			return
 		}
 		if !found {
 			// Session Expired. Redirect to Login page Clearing Session Cookie
-			webSessionMgr.RemoveWebSessionCookie(w)
+			cookieSessionMgr.RemoveSessionCookie(w)
 			cookiesession.SetCookie(w, r, 60)
-			http.Redirect(w, r, webSessionMgr.Conf.LoginPath+"?session=expired", http.StatusSeeOther)
+			http.Redirect(w, r, cookieSessionMgr.Conf.LoginPath+"?session=expired", http.StatusSeeOther)
 			return
 		}
 

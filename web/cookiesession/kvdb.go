@@ -8,7 +8,7 @@ import (
 // SessionIDToUIDStrKVDBSingleValue for the case KVDB SessionID:UidStr(SingleValue)
 func SessionIDToUIDStrKVDBSingleValue(ctx context.Context, sessionMgr *Manager, sessionID string) (string, error) {
 	key := sessionMgr.SessionIDToKVDBKey(sessionID)
-	uidStr, ok, err := sessionMgr.BackendKVDBClient.Get(ctx, key)
+	uidStr, ok, err := sessionMgr.KVDBClient.Get(ctx, key)
 	if err != nil {
 		return "", err
 	}
