@@ -23,30 +23,30 @@ import (
 
 // Core - common config
 type Core struct {
-	AppName             string                                           `json:"app_name"`
-	Listen              string                                           `json:"listen"`     // HTTP Application Listen IP:PORT Address
-	Host                string                                           `json:"host"`       // HTTP Host. Can be used to generate public url endpoints
-	DebugOpts           DebugOpts                                        `json:"debug_opts"` // Debug Options
-	AppRoot             string                                           `json:"-"`          // Filled from compiled paths
-	RootCtx             context.Context                                  `json:"-"`          // Global Context with RootCancel
-	RootCancel          context.CancelFunc                               `json:"-"`          // CancelFunc for RootCtx
-	UDSService          *uds.Service                                     `json:"-"`          // PrepareUDSService
-	JobScheduler        *schedjobs.Scheduler                             `json:"-"`          // PrepareJobScheduler
-	WebService          *web.Service                                     `json:"-"`          // PrepareWebService
-	ThrottleBucketStore *throttle.BucketStore                            `json:"-"`          // PrepareThrottleBucketStore
-	VolatileKV          *sync.Map                                        `json:"-"`          // map[string]string
-	SessionLocks        *sync.Map                                        `json:"-"`          // map[string]*sync.Mutex for ServiceSessions and WebSessions
-	ActionLocks         *sync.Map                                        `json:"-"`          // map[string]struct{}
-	StorageConf         storages.Conf                                    `json:"-"`          // LoadStorageConf
-	BackendHttpClient   *http.Client                                     `json:"-"`          // for requests to external apis
-	KVDBConf            kvdb.Conf                                        `json:"-"`          // loadKVDBConf
-	BackendKVDBClient   kvdb.Client                                      `json:"-"`          // prepareKVDBClient
-	SQLDBConfs          map[string]*sqldb.Conf                           `json:"-"`          // loadSQLDBConfs
-	BackendSQLDBClients map[string]sqldb.Client                          `json:"-"`          // prepareSQLDBClients
-	ClientApps          atomic.Pointer[map[string]clients.ClientAppConf] `json:"-"`          // [Hot Reload] PrepareClientApps
-	WebSessionManager   *cookiesession.Manager                           `json:"-"`          // PrepareWebSessions
-	MainBackendClient   *mainbackend.Client                              `json:"-"`          // PrepareMainBackendClient
-	HTMLTemplateStore   *tpl.HTMLTemplateStore                           `json:"-"`          // PrepareHTMLTemplateStore
+	AppName              string                                           `json:"app_name"`
+	Listen               string                                           `json:"listen"`     // HTTP Application Listen IP:PORT Address
+	Host                 string                                           `json:"host"`       // HTTP Host. Can be used to generate public url endpoints
+	DebugOpts            DebugOpts                                        `json:"debug_opts"` // Debug Options
+	AppRoot              string                                           `json:"-"`          // Filled from compiled paths
+	RootCtx              context.Context                                  `json:"-"`          // Global Context with RootCancel
+	RootCancel           context.CancelFunc                               `json:"-"`          // CancelFunc for RootCtx
+	UDSService           *uds.Service                                     `json:"-"`          // PrepareUDSService
+	JobScheduler         *schedjobs.Scheduler                             `json:"-"`          // PrepareJobScheduler
+	WebService           *web.Service                                     `json:"-"`          // PrepareWebService
+	ThrottleBucketStore  *throttle.BucketStore                            `json:"-"`          // PrepareThrottleBucketStore
+	VolatileKV           *sync.Map                                        `json:"-"`          // map[string]string
+	SessionLocks         *sync.Map                                        `json:"-"`          // map[string]*sync.Mutex for ServiceSessions and WebSessions
+	ActionLocks          *sync.Map                                        `json:"-"`          // map[string]struct{}
+	StorageConf          storages.Conf                                    `json:"-"`          // LoadStorageConf
+	BackendHttpClient    *http.Client                                     `json:"-"`          // for requests to external apis
+	KVDBConf             kvdb.Conf                                        `json:"-"`          // loadKVDBConf
+	BackendKVDBClient    kvdb.Client                                      `json:"-"`          // prepareKVDBClient
+	SQLDBConfs           map[string]*sqldb.Conf                           `json:"-"`          // loadSQLDBConfs
+	BackendSQLDBClients  map[string]sqldb.Client                          `json:"-"`          // prepareSQLDBClients
+	ClientApps           atomic.Pointer[map[string]clients.ClientAppConf] `json:"-"`          // [Hot Reload] PrepareClientApps
+	CookieSessionManager *cookiesession.Manager                           `json:"-"`          // PrepareCookieSessions
+	MainBackendClient    *mainbackend.Client                              `json:"-"`          // PrepareMainBackendClient
+	HTMLTemplateStore    *tpl.HTMLTemplateStore                           `json:"-"`          // PrepareHTMLTemplateStore
 
 	services []svc.Service // Services to Manage
 	done     chan error

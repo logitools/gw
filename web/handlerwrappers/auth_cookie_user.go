@@ -23,7 +23,7 @@ func (m *AuthCookieUser) Wrap(inner http.Handler) http.Handler {
 	appCore := m.AppProvider().AppCore()
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		cookieSessionMgr := appCore.WebSessionManager
+		cookieSessionMgr := appCore.CookieSessionManager
 		// If Logged-in, Session Cookie must be shipped in the request
 		sessionCookie, err := r.Cookie(cookiesession.CookieName)
 		if err != nil { // http.ErrNoCookie

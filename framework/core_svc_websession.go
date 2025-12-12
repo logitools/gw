@@ -11,10 +11,10 @@ import (
 	"github.com/logitools/gw/web/cookiesession"
 )
 
-// PrepareWebSessions prepares WebSessionManager
+// PrepareCookieSessions prepares CookieSessionManager
 // Prerequisite: BackendKVDBClient
 // Prerequisite: SessionLocks
-func (c *Core) PrepareWebSessions() error {
+func (c *Core) PrepareCookieSessions() error {
 	confFilePath := filepath.Join(c.AppRoot, "config", ".web-session.json")
 	confBytes, err := os.ReadFile(confFilePath) // ([]byte, error)
 	if err != nil {
@@ -41,6 +41,6 @@ func (c *Core) PrepareWebSessions() error {
 	}
 	mgr.Cipher = cipher
 
-	c.WebSessionManager = mgr
+	c.CookieSessionManager = mgr
 	return nil
 }

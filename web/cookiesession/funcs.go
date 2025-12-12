@@ -41,7 +41,7 @@ func RemoveCookie(w http.ResponseWriter) {
 }
 
 // TryRedirectIfIntendedURICookie tries to redirect if IntendedURICookie is set returning true if redirected
-// loginPath core.WebSessionManager.Conf.LoginPath
+// loginPath core.CookieSessionManager.Conf.LoginPath
 func TryRedirectIfIntendedURICookie(w http.ResponseWriter, r *http.Request, loginPath string) bool {
 	intendedUriCookie, err := r.Cookie(IntendedURICookieName)
 	if err != nil {
