@@ -9,9 +9,9 @@ func AcquireLocks(lockStore *sync.Map, lockNames []string) ([]string, bool) {
 	var acquiredLockNames []string
 	for _, lockName := range lockNames {
 		_, lockedOut := lockStore.LoadOrStore(lockName, struct{}{})
-		if lockedOut {
-			// failed to acquire all the required named locks.
-			// rollback previously acquired ones
+		if lockedOut { // found a lock already acquired and registered by someone else
+			// so, failed to acquire all the required locks.
+			// release all locks acquired up to this point
 			for _, k := range acquiredLockNames {
 				lockStore.Delete(k)
 			}
