@@ -30,7 +30,7 @@ func StrToInt64UIDCtxInjector(ctx context.Context, uidStr string) (context.Conte
 	return WithUserID[int64](ctx, uid), nil
 }
 
-func UidStrFromCtxInt64UID(ctx context.Context) (string, error) {
+func StrUIDFromCtxInt64UID(ctx context.Context) (string, error) {
 	UserID, ok := UserIdFromContext[int64](ctx)
 	if !ok {
 		return "", errors.New("no UserID in Context")
