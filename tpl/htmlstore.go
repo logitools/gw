@@ -14,13 +14,13 @@ import (
 const FileSuffix = ".gohtml"
 
 type HTMLTemplateStore struct {
-	Base     map[string]*template.Template // each file → one template
+	Files    map[string]*template.Template // each file → one template
 	Combined map[string]*template.Template // composed templates
 }
 
 func NewHTMLTemplateStore() *HTMLTemplateStore {
 	return &HTMLTemplateStore{
-		Base:     make(map[string]*template.Template),
+		Files:    make(map[string]*template.Template),
 		Combined: make(map[string]*template.Template),
 	}
 }
@@ -72,7 +72,7 @@ func (s *HTMLTemplateStore) LoadBaseTemplates(tplRoot string) error {
 			rel, _ := filepath.Rel(tplRoot, path)
 			key := strings.TrimSuffix(filepath.ToSlash(rel), FileSuffix)
 			// Duplicate
-			if _, exists := s.Base[key]; exists {
+			if _, exists := s.Files[key]; exists {
 				return fmt.Errorf("duplicate template key detected: %s (file=%s)", key, path)
 			}
 			// Parse
@@ -81,13 +81,13 @@ func (s *HTMLTemplateStore) LoadBaseTemplates(tplRoot string) error {
 			if err != nil {
 				return fmt.Errorf("parse error in %s: %w", path, err)
 			}
-			s.Base[key] = t
+			s.Files[key] = t
 			return nil
 		},
 	)
 	if err != nil {
 		return err
 	}
-	log.Printf("[INFO][TEMPLATE] Loaded %d templates from %s", len(s.Base), tplRoot)
+	log.Printf("[INFO][TEMPLATE] Loaded %d templates from %s", len(s.Files), tplRoot)
 	return nil
 }
