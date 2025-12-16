@@ -8,7 +8,7 @@ import (
 
 func (c *Core) PrepareHTMLTemplateStore() error {
 	c.HTMLTemplateStore = tpl.NewHTMLTemplateStore()
-	return c.HTMLTemplateStore.LoadBaseTemplates(
+	return c.HTMLTemplateStore.LoadFileTemplates(
 		filepath.Join(c.AppRoot, "templates", "html"),
 	)
 }
