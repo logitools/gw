@@ -141,10 +141,10 @@ func (s *Service) handleConn(c net.Conn) {
 		}
 		args := strings.Fields(line)
 		cmdStr := args[0]
-		if cmdStr == "quit" {
+		if cmdStr == "q" || cmdStr == "quit" {
 			return
 		}
-		if cmdStr == "help" {
+		if cmdStr == "h" || cmdStr == "help" {
 			s.CommandStore.PrintHelp(c)
 			continue
 		}
