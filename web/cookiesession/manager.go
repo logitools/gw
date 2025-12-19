@@ -221,14 +221,15 @@ func (m *Manager) StoreSessionInKVDBAsSingleValueUID(ctx context.Context, uidStr
 	return cookieSessionID, nil
 }
 
-// KVDBUserIDData retrieves the UID as the single value for the given Session Key
-// This is for the sessions stored by StoreSessionInKVDBAsSingleValueUID
-func (m *Manager) KVDBUserIDData(ctx context.Context, key string) (*KVDBUserIDData, error) {
-	uidStr, ok, err := m.KVDBClient.Get(ctx, key)
-	if err != nil || !ok {
-		return nil, err
+// SessionIDToUIDStrKVDBSingleValue for the case KVDB SessionID:UidStr(SingleValue)
+func SessionIDToUIDStrKVDBSingleValue(ctx context.Context, sessionMgr *Manager, sessionID string) (string, error) {
+	key := sessionMgr.SessionIDToKVDBKey(sessionID)
+	uidStr, ok, err := sessionMgr.KVDBClient.Get(ctx, key)
+	if err != nil {
+		return "", err
 	}
-	return &KVDBUserIDData{
-		UserIDStr: uidStr,
-	}, nil
+	if !ok {
+		return "", errors.New("session not found")
+	}
+	return uidStr, nil
 }
