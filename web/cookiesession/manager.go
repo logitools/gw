@@ -74,6 +74,7 @@ func (m *Manager) RemoveSessionCookie(w http.ResponseWriter) {
 }
 
 // StoreSessionInKVDBForBackendAPI stores a session in KVDB for Backend API and returns the session ID
+// Session Key in KVDB stores "uid" for UserID and other backend API tokens.
 func (m *Manager) StoreSessionInKVDBForBackendAPI(ctx context.Context, accessToken string, refreshToken string, uidStr string) (string, error) {
 	cookieSessionID, err := GenerateSessionID()
 	if err != nil {
@@ -142,7 +143,27 @@ func (m *Manager) StoreSessionInKVDBForBackendAPI(ctx context.Context, accessTok
 	return cookieSessionID, nil
 }
 
-// StoreSessionInKVDBAsSingleValueUID stores a session in KVDB as a single value UID and Returns the session ID
+func (m *Manager) KVDBBackendAPIData(ctx context.Context, key string) (*KVDBBackendAPIData, error) {
+	sessionData, err := m.KVDBClient.GetAllFields(ctx, key)
+	if err != nil {
+		return nil, err
+	}
+	accessToken, ok1 := sessionData["access_token"]
+	refreshToken, ok2 := sessionData["refresh_token"]
+	uidStr, ok3 := sessionData["uid"]
+	if !ok1 || !ok2 || !ok3 {
+		return nil, errors.New("invalid session data")
+	}
+	return &KVDBBackendAPIData{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+		UserIDStr:    uidStr,
+	}, nil
+}
+
+// StoreSessionInKVDBAsSingleValueUID stores a session with UID only (single value) in KVDB
+// Returns the SessionID
+// This is the Simplest Case -> No API Tokens in the KVDB for the Session
 func (m *Manager) StoreSessionInKVDBAsSingleValueUID(ctx context.Context, uidStr string) (string, error) {
 	cookieSessionID, err := GenerateSessionID()
 	if err != nil {
@@ -200,24 +221,8 @@ func (m *Manager) StoreSessionInKVDBAsSingleValueUID(ctx context.Context, uidStr
 	return cookieSessionID, nil
 }
 
-func (m *Manager) KVDBBackendAPIData(ctx context.Context, key string) (*KVDBBackendAPIData, error) {
-	sessionData, err := m.KVDBClient.GetAllFields(ctx, key)
-	if err != nil {
-		return nil, err
-	}
-	accessToken, ok1 := sessionData["access_token"]
-	refreshToken, ok2 := sessionData["refresh_token"]
-	uidStr, ok3 := sessionData["uid"]
-	if !ok1 || !ok2 || !ok3 {
-		return nil, errors.New("invalid session data")
-	}
-	return &KVDBBackendAPIData{
-		AccessToken:  accessToken,
-		RefreshToken: refreshToken,
-		UserIDStr:    uidStr,
-	}, nil
-}
-
+// KVDBUserIDData retrieves the UID as the single value for the given Session Key
+// This is for the sessions stored by StoreSessionInKVDBAsSingleValueUID
 func (m *Manager) KVDBUserIDData(ctx context.Context, key string) (*KVDBUserIDData, error) {
 	uidStr, ok, err := m.KVDBClient.Get(ctx, key)
 	if err != nil || !ok {

@@ -14,7 +14,7 @@ import (
 const FileSuffix = ".gohtml"
 
 type HTMLTemplateStore struct {
-	FileTemplates map[string]*template.Template // each file → one template
+	FileTemplates map[string]*template.Template // each file → html/template.New(key).Parse(string(fileBytes))
 	Derived       map[string]*template.Template // composed templates
 }
 
