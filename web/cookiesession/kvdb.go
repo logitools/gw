@@ -6,3 +6,5 @@ type KVDBBackendAPIData struct {
 	UserIDStr    string `json:"uid"`
 	Key          string `json:"-"`
 }
+
+// ToDo: make tokens fields as map[string]string for many different APIs

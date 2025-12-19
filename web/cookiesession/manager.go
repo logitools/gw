@@ -222,6 +222,7 @@ func (m *Manager) StoreSessionInKVDBAsSingleValueUID(ctx context.Context, uidStr
 }
 
 // SessionIDToUIDStrKVDBSingleValue for the case KVDB SessionID:UidStr(SingleValue)
+// ToDo: make this as a method of Manager
 func SessionIDToUIDStrKVDBSingleValue(ctx context.Context, sessionMgr *Manager, sessionID string) (string, error) {
 	key := sessionMgr.SessionIDToKVDBKey(sessionID)
 	uidStr, ok, err := sessionMgr.KVDBClient.Get(ctx, key)
