@@ -75,15 +75,42 @@ func (m *Manager) RemoveSessionCookie(w http.ResponseWriter) {
 
 func (m *Manager) StoreExternalTokenPairInKVDB(ctx context.Context, sessionID string, apiID string, accessToken string, refreshToken string) error {
 	baseKey := m.SessionIDToKVDBKey(sessionID)
-	err := m.KVDBClient.SetField(ctx, baseKey+":access_tokens", apiID, accessToken)
+	accessTokenKey := baseKey + ":access_tokens"
+	refreshTokenKey := baseKey + ":refresh_tokens"
+
+	// If first token pair, set expiration on the containers
+	shouldSetExp := false
+	found, err := m.KVDBClient.Exists(ctx, accessTokenKey)
+	if err != nil || !found {
+		shouldSetExp = true
+	}
+
+	err = m.KVDBClient.SetField(ctx, accessTokenKey, apiID, accessToken)
 	if err != nil {
 		return err
 	}
-	err = m.KVDBClient.SetField(ctx, baseKey+":refresh_tokens", apiID, refreshToken)
+	err = m.KVDBClient.SetField(ctx, refreshTokenKey, apiID, refreshToken)
 	if err != nil {
 		return err
 	}
+
+	if shouldSetExp {
+		slidingExpiration := time.Duration(m.Conf.ExpireSliding) * time.Second
+		_, _ = m.KVDBClient.Expire(ctx, accessTokenKey, slidingExpiration)
+		_, _ = m.KVDBClient.Expire(ctx, refreshTokenKey, slidingExpiration)
+	}
+
 	return nil
+}
+
+func (m *Manager) ExtendSlidingSession(ctx context.Context, sessionID string, hasExternalTokens bool) {
+	slidingExpiration := time.Duration(m.Conf.ExpireSliding) * time.Second
+	baseKey := m.SessionIDToKVDBKey(sessionID)
+	_, _ = m.KVDBClient.Expire(ctx, baseKey, slidingExpiration)
+	if hasExternalTokens {
+		_, _ = m.KVDBClient.Expire(ctx, baseKey+":access_tokens", slidingExpiration)
+		_, _ = m.KVDBClient.Expire(ctx, baseKey+":refresh_tokens", slidingExpiration)
+	}
 }
 
 func (m *Manager) FetchExternalAccessToken(ctx context.Context, sessionID string, apiID string) (string, error) {
