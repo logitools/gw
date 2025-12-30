@@ -115,7 +115,7 @@ func (m *Manager) StoreSessionInKVDB(ctx context.Context, uidStr string, hasExte
 	if err != nil {
 		return "", err
 	}
-	// Store session_id in KvDB with access_token and refresh_token
+	// Store session_id->uid in KVDB
 	slidingExpiration := time.Duration(m.Conf.ExpireSliding) * time.Second
 	key := m.SessionIDToKVDBKey(cookieSessionID)
 	if err = m.KVDBClient.Set(ctx, key, uidStr, slidingExpiration); err != nil {
@@ -134,6 +134,14 @@ func (m *Manager) StoreSessionInKVDB(ctx context.Context, uidStr string, hasExte
 		if err = m.KVDBClient.Push(ctx, usrSessionListKey, cookieSessionID); err != nil {
 			return "", err
 		}
+
+		defer func() {
+			_, _ = m.KVDBClient.Expire(
+				ctx,
+				usrSessionListKey,
+				time.Duration(m.Conf.ExpireHardcap)*time.Second,
+			)
+		}()
 
 		if err = m.CleanUp(ctx, usrSessionListKey, hasExternalTokens); err != nil {
 			return "", err
@@ -184,9 +192,6 @@ func (m *Manager) CleanUp(ctx context.Context, usrSessionListKey string, hasExte
 	if err = m.KVDBClient.Trim(ctx, usrSessionListKey, diff, -1); err != nil {
 		return err
 	}
-	hardcapExpiration := time.Duration(m.Conf.ExpireHardcap) * time.Second
-	_, _ = m.KVDBClient.Expire(ctx, usrSessionListKey, hardcapExpiration)
-
 	return nil
 }
 

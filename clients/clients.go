@@ -5,7 +5,7 @@ import "context"
 type ClientAppConf struct {
 	ID                   string    `json:"-"` // filled with a key from .clients.json
 	Name                 string    `json:"name"`
-	ExpireAccess         int       `json:"expire_access"`
+	ExpireAccess         int       `json:"expire_access"` // No Sliding, Just Expire, then, Reissue by Refresh Token
 	ExpireRefreshSliding int       `json:"expire_refresh_sliding"`
 	ExpireRefreshHardcap int       `json:"expire_refresh_hardcap"`
 	MaxSessionsPerUser   int64     `json:"max_sessions_per_user"` // Max # of Service Sessions (Concurrent Connections) per User per ClientApp. 0 = unlimited
