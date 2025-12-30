@@ -15,7 +15,7 @@ import (
 // Prerequisite: BackendKVDBClient
 // Prerequisite: SessionLocks
 func (c *Core) PrepareCookieSessions() error {
-	confFilePath := filepath.Join(c.AppRoot, "config", ".web-session.json")
+	confFilePath := filepath.Join(c.AppRoot, "config", ".cookie-session.json")
 	confBytes, err := os.ReadFile(confFilePath) // ([]byte, error)
 	if err != nil {
 		return err
