@@ -15,6 +15,16 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
+var (
+	ErrAccessTokenNotFound  = errors.New("access token not found")
+	ErrRefreshTokenNotFound = errors.New("refresh token not found")
+)
+
+type AccessTokenPair struct {
+	AccessToken  string
+	RefreshToken string
+}
+
 func GenerateOpaqueAccessRefreshTokenPair(byteLength int) (string, string, error) {
 	var (
 		err          error

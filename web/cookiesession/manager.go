@@ -21,7 +21,7 @@ type Manager struct {
 }
 
 func (m *Manager) SessionIDToKVDBKey(sessionID string) string {
-	return m.AppName + "_wsession:" + sessionID
+	return m.AppName + ":cookie_session:" + sessionID
 }
 
 func (m *Manager) SessionExistsInKVDB(ctx context.Context, sessionID string) (bool, error) {
@@ -47,7 +47,7 @@ func (m *Manager) CheckCookieSession(ctx context.Context, r *http.Request) bool 
 func (m *Manager) SetSessionCookie(w http.ResponseWriter, sessionID string) error {
 	encSessionID, err := m.Cipher.EncryptEncode([]byte(sessionID))
 	if err != nil {
-		return fmt.Errorf("failed to encrypt web login session id. %v", err)
+		return fmt.Errorf("failed to encrypt cookie session id. %v", err)
 	}
 	http.SetCookie(w, &http.Cookie{
 		Name:  CookieName,
@@ -73,160 +73,128 @@ func (m *Manager) RemoveSessionCookie(w http.ResponseWriter) {
 	})
 }
 
-// StoreSessionInKVDBForBackendAPI stores a session in KVDB for Backend API and returns the session ID
-// Session Key in KVDB stores "uid" for UserID and other backend API tokens.
-func (m *Manager) StoreSessionInKVDBForBackendAPI(ctx context.Context, accessToken string, refreshToken string, uidStr string) (string, error) {
+func (m *Manager) StoreExternalTokenPairInKVDB(ctx context.Context, sessionID string, apiID string, accessToken string, refreshToken string) error {
+	baseKey := m.SessionIDToKVDBKey(sessionID)
+	err := m.KVDBClient.SetField(ctx, baseKey+":access_tokens", apiID, accessToken)
+	if err != nil {
+		return err
+	}
+	err = m.KVDBClient.SetField(ctx, baseKey+":refresh_tokens", apiID, refreshToken)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (m *Manager) FetchExternalAccessToken(ctx context.Context, sessionID string, apiID string) (string, error) {
+	tkn, found, err := m.KVDBClient.GetField(ctx, m.SessionIDToKVDBKey(sessionID)+":access_tokens", apiID)
+	if err != nil {
+		return "", err
+	}
+	if !found {
+		return "", security.ErrAccessTokenNotFound
+	}
+	return tkn, nil
+}
+
+func (m *Manager) FetchExternalRefreshToken(ctx context.Context, sessionID string, apiID string) (string, error) {
+	tkn, found, err := m.KVDBClient.GetField(ctx, m.SessionIDToKVDBKey(sessionID)+":refresh_tokens", apiID)
+	if err != nil {
+		return "", err
+	}
+	if !found {
+		return "", security.ErrRefreshTokenNotFound
+	}
+	return tkn, nil
+}
+
+// StoreSessionInKVDB stores a session in KVDB -> UID
+// Returns the generated session ID
+func (m *Manager) StoreSessionInKVDB(ctx context.Context, uidStr string, hasExternalTokens bool) (string, error) {
 	cookieSessionID, err := GenerateSessionID()
 	if err != nil {
 		return "", err
 	}
 	// Store session_id in KvDB with access_token and refresh_token
 	slidingExpiration := time.Duration(m.Conf.ExpireSliding) * time.Second
-	hardcapExpiration := time.Duration(m.Conf.ExpireHardcap) * time.Second
-	key := m.SessionIDToKVDBKey(cookieSessionID)
-	if err = m.KVDBClient.SetFields(ctx, key, map[string]any{
-		"access_token":  accessToken,
-		"refresh_token": refreshToken,
-		"uid":           uidStr,
-	}); err != nil {
-		return "", err
-	}
-	ok, err := m.KVDBClient.Expire(ctx, key, slidingExpiration)
-	if err != nil {
-		return "", err
-	}
-	if !ok {
-		return "", errors.New("failed to set session expiration")
-	}
-
-	if m.Conf.MaxCntPerUser > 0 {
-		usrSessionListKey := fmt.Sprintf("%s_wsessions:%s", m.AppName, uidStr)
-		// SessionList Lock (User Level Lock)
-		mu, _ := m.SessionLocks.LoadOrStore(usrSessionListKey, &sync.Mutex{})
-		mutex := mu.(*sync.Mutex)
-
-		mutex.Lock() // waits until this gets the lock if it's locked by another goroutine
-		defer mutex.Unlock()
-		// No need to delete the lock. Keep it for reusing it's tiny in memory.
-		// By keeping it, no overhead to create(LoadOrStore)/delete the lock
-		// If you wants to delete the lock every time:
-		//defer func() {
-		//	mutex.Unlock()
-		//	env.SessionLocks.Delete(usrSessionListKey)
-		//}()
-
-		if err = m.KVDBClient.Push(ctx, usrSessionListKey, cookieSessionID); err != nil {
-			return "", err
-		}
-		sessionCnt, err := m.KVDBClient.Len(ctx, usrSessionListKey)
-		if err != nil {
-			return "", err
-		}
-		if sessionCnt > m.Conf.MaxCntPerUser {
-			diff := sessionCnt - m.Conf.MaxCntPerUser
-			sessionsToDel, err := m.KVDBClient.Range(ctx, usrSessionListKey, 0, diff-1) // []string
-			if err != nil {
-				return "", err
-			}
-			var keysToDel []string
-			for _, v := range sessionsToDel {
-				keysToDel = append(keysToDel, m.SessionIDToKVDBKey(v))
-			}
-			_, _ = m.KVDBClient.Delete(ctx, keysToDel...)
-			if err = m.KVDBClient.Trim(ctx, usrSessionListKey, diff, -1); err != nil {
-				return "", err
-			}
-			_, _ = m.KVDBClient.Expire(ctx, usrSessionListKey, hardcapExpiration)
-		}
-	}
-
-	return cookieSessionID, nil
-}
-
-func (m *Manager) KVDBBackendAPIData(ctx context.Context, key string) (*KVDBBackendAPIData, error) {
-	sessionData, err := m.KVDBClient.GetAllFields(ctx, key)
-	if err != nil {
-		return nil, err
-	}
-	accessToken, ok1 := sessionData["access_token"]
-	refreshToken, ok2 := sessionData["refresh_token"]
-	uidStr, ok3 := sessionData["uid"]
-	if !ok1 || !ok2 || !ok3 {
-		return nil, errors.New("invalid session data")
-	}
-	return &KVDBBackendAPIData{
-		AccessToken:  accessToken,
-		RefreshToken: refreshToken,
-		UserIDStr:    uidStr,
-	}, nil
-}
-
-// StoreSessionInKVDBAsSingleValueUID stores a session with UID only (single value) in KVDB
-// Returns the SessionID
-// This is the Simplest Case -> No API Tokens in the KVDB for the Session
-func (m *Manager) StoreSessionInKVDBAsSingleValueUID(ctx context.Context, uidStr string) (string, error) {
-	cookieSessionID, err := GenerateSessionID()
-	if err != nil {
-		return "", err
-	}
-	// Store session_id in KvDB with access_token and refresh_token
-	slidingExpiration := time.Duration(m.Conf.ExpireSliding) * time.Second
-	hardcapExpiration := time.Duration(m.Conf.ExpireHardcap) * time.Second
 	key := m.SessionIDToKVDBKey(cookieSessionID)
 	if err = m.KVDBClient.Set(ctx, key, uidStr, slidingExpiration); err != nil {
 		return "", err
 	}
 
 	if m.Conf.MaxCntPerUser > 0 {
-		usrSessionListKey := fmt.Sprintf("%s_wsessions:%s", m.AppName, uidStr)
+		usrSessionListKey := fmt.Sprintf("%s:cookie_sessions:%s", m.AppName, uidStr)
 		// SessionList Lock (User Level Lock)
 		mu, _ := m.SessionLocks.LoadOrStore(usrSessionListKey, &sync.Mutex{})
 		mutex := mu.(*sync.Mutex)
 
 		mutex.Lock() // waits until this gets the lock if it's locked by another goroutine
 		defer mutex.Unlock()
-		// No need to delete the lock. Keep it for reusing it's tiny in memory.
-		// By keeping it, no overhead to create(LoadOrStore)/delete the lock
-		// If you wants to delete the lock every time:
-		//defer func() {
-		//	mutex.Unlock()
-		//	env.SessionLocks.Delete(usrSessionListKey)
-		//}()
 
 		if err = m.KVDBClient.Push(ctx, usrSessionListKey, cookieSessionID); err != nil {
 			return "", err
 		}
-		sessionCnt, err := m.KVDBClient.Len(ctx, usrSessionListKey)
-		if err != nil {
+
+		if err = m.CleanUp(ctx, usrSessionListKey, hasExternalTokens); err != nil {
 			return "", err
-		}
-		if sessionCnt > m.Conf.MaxCntPerUser {
-			diff := sessionCnt - m.Conf.MaxCntPerUser
-			sessionsToDel, err := m.KVDBClient.Range(ctx, usrSessionListKey, 0, diff-1) // []string
-			if err != nil {
-				return "", err
-			}
-			var keysToDel []string
-			for _, v := range sessionsToDel {
-				keysToDel = append(keysToDel, m.SessionIDToKVDBKey(v))
-			}
-			_, _ = m.KVDBClient.Delete(ctx, keysToDel...)
-			if err = m.KVDBClient.Trim(ctx, usrSessionListKey, diff, -1); err != nil {
-				return "", err
-			}
-			_, _ = m.KVDBClient.Expire(ctx, usrSessionListKey, hardcapExpiration)
 		}
 	}
 
 	return cookieSessionID, nil
 }
 
-func (m *Manager) SessionIDToUIDStrKVDBSingleValue(ctx context.Context, sessionID string) (string, error) {
-	return SessionIDToUIDStrKVDBSingleValue(ctx, m, sessionID)
+func (m *Manager) buildKeysToDel(sessionsToDel []string, hasExternalTokens bool) []string {
+	var keysToDel []string
+	if hasExternalTokens {
+		keysToDel = make([]string, 0, len(sessionsToDel)*3)
+		for _, sid := range sessionsToDel {
+			baseKey := m.SessionIDToKVDBKey(sid)
+			keysToDel = append(keysToDel,
+				baseKey,
+				baseKey+":access_tokens",
+				baseKey+":refresh_tokens",
+			)
+		}
+		return keysToDel
+	}
+	keysToDel = make([]string, 0, len(sessionsToDel))
+	for _, sid := range sessionsToDel {
+		baseKey := m.SessionIDToKVDBKey(sid)
+		keysToDel = append(keysToDel, baseKey)
+	}
+	return keysToDel
 }
 
-// SessionIDToUIDStrKVDBSingleValue for the case KVDB SessionID:UidStr(SingleValue)
-func SessionIDToUIDStrKVDBSingleValue(ctx context.Context, sessionMgr *Manager, sessionID string) (string, error) {
+func (m *Manager) CleanUp(ctx context.Context, usrSessionListKey string, hasExternalTokens bool) error {
+	sessionCnt, err := m.KVDBClient.Len(ctx, usrSessionListKey)
+	if err != nil {
+		return err
+	}
+	if sessionCnt <= m.Conf.MaxCntPerUser {
+		return nil
+	}
+
+	diff := sessionCnt - m.Conf.MaxCntPerUser
+	sessionsToDel, err := m.KVDBClient.Range(ctx, usrSessionListKey, 0, diff-1) // []string
+	if err != nil {
+		return err
+	}
+	keysToDel := m.buildKeysToDel(sessionsToDel, hasExternalTokens)
+	_, _ = m.KVDBClient.Delete(ctx, keysToDel...)
+	if err = m.KVDBClient.Trim(ctx, usrSessionListKey, diff, -1); err != nil {
+		return err
+	}
+	hardcapExpiration := time.Duration(m.Conf.ExpireHardcap) * time.Second
+	_, _ = m.KVDBClient.Expire(ctx, usrSessionListKey, hardcapExpiration)
+
+	return nil
+}
+
+func (m *Manager) SessionIDToUIDStrFromKVDB(ctx context.Context, sessionID string) (string, error) {
+	return SessionIDToUIDStrFromKVDB(ctx, m, sessionID)
+}
+
+func SessionIDToUIDStrFromKVDB(ctx context.Context, sessionMgr *Manager, sessionID string) (string, error) {
 	key := sessionMgr.SessionIDToKVDBKey(sessionID)
 	uidStr, ok, err := sessionMgr.KVDBClient.Get(ctx, key)
 	if err != nil {
