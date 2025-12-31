@@ -60,14 +60,16 @@ func (c *Client) TTL(ctx context.Context, key string) (time.Duration, kvdb.TTLSt
 		return 0, 0, err
 	}
 	d := cmd.Val() // time.Duration
-	switch d {
-	case -2 * time.Second:
-		return 0, kvdb.TTLKeyNotFound, nil
-	case -1 * time.Second:
+	if d == -1 {
+		// -1: Persistent
 		return 0, kvdb.TTLPersistent, nil
-	default:
-		return d, kvdb.TTLExpiring, nil
 	}
+	if d < 0 {
+		// -2: KeyNotFound
+		// other neg values also fallback to KeyNotFound
+		return 0, kvdb.TTLKeyNotFound, nil
+	}
+	return d, kvdb.TTLExpiring, nil
 }
 
 func (c *Client) Delete(ctx context.Context, keys ...string) (int64, error) {
