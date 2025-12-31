@@ -56,7 +56,7 @@ func (m *Manager) SetSessionCookie(w http.ResponseWriter, sessionID string) erro
 		// Domain: // Cannot be set with `__Host-`
 		HttpOnly: true, // JS cannot read it
 		Secure:   true, // only sent over HTTPS
-		MaxAge:   m.Conf.ExpireHardcap,
+		MaxAge:   m.Conf.ExpireSliding,
 		SameSite: http.SameSiteLaxMode,
 	})
 	return nil
@@ -79,7 +79,7 @@ func (m *Manager) StoreExternalTokenPairInKVDB(ctx context.Context, sessionID st
 	refreshTokenKey := baseKey + ":refresh_tokens"
 
 	// If first token pair, set expiration on the containers
-	shouldSetExp := false
+	shouldSetExp := false // No Exp updated for additional token pairs
 	found, err := m.KVDBClient.Exists(ctx, accessTokenKey)
 	if err != nil || !found {
 		shouldSetExp = true
@@ -103,6 +103,8 @@ func (m *Manager) StoreExternalTokenPairInKVDB(ctx context.Context, sessionID st
 	return nil
 }
 
+// ExtendSlidingSession
+// ToDo: hardcap
 func (m *Manager) ExtendSlidingSession(ctx context.Context, sessionID string, hasExternalTokens bool) {
 	slidingExpiration := time.Duration(m.Conf.ExpireSliding) * time.Second
 	baseKey := m.SessionIDToKVDBKey(sessionID)
@@ -166,7 +168,7 @@ func (m *Manager) StoreSessionInKVDB(ctx context.Context, uidStr string, hasExte
 			_, _ = m.KVDBClient.Expire(
 				ctx,
 				usrSessionListKey,
-				time.Duration(m.Conf.ExpireHardcap)*time.Second,
+				time.Duration(m.Conf.ExpireSliding)*time.Second,
 			)
 		}()
 

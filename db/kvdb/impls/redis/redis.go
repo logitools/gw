@@ -54,6 +54,29 @@ func (c *Client) Exists(ctx context.Context, key string) (bool, error) {
 	return n > 0, err
 }
 
+func (c *Client) TTL(ctx context.Context, key string) (time.Duration, bool, error) {
+	cmd := c.internal.TTL(ctx, key) // *redis.DurationCmd
+	err := cmd.Err()
+	if err != nil {
+		return 0, false, err
+	}
+	d := cmd.Val() // time.Duration
+	switch {
+	case d == -2*time.Second:
+		// key does not exist
+		return 0, false, nil
+	case d == -1*time.Second:
+		// key exists, no expiration
+		return 0, true, nil
+	case d >= 0:
+		// key exists and has TTL
+		return d, true, nil
+	default:
+		// should never happen, but be defensive
+		return 0, false, errors.New("redis: unexpected TTL value")
+	}
+}
+
 func (c *Client) Delete(ctx context.Context, keys ...string) (int64, error) {
 	return c.internal.Del(ctx, keys...).Result()
 }

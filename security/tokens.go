@@ -40,6 +40,8 @@ func GenerateOpaqueAccessRefreshTokenPair(byteLength int) (string, string, error
 	return accessToken, refreshToken, nil
 }
 
+// RefreshInfo
+// ValidUntil int64 <- time.Now().Add(expireRefreshHardcap).Unix()
 type RefreshInfo struct {
 	ClientID   string
 	ValidUntil int64  // Hardcap. [NOTE] Existence = at least in the Expiration Sliding Window
