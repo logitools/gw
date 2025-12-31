@@ -12,7 +12,7 @@ import (
 )
 
 // PrepareCookieSessions prepares CookieSessionManager
-// Prerequisite: BackendKVDBClient
+// Prerequisite: KVDBClient
 // Prerequisite: SessionLocks
 func (c *Core) PrepareCookieSessions() error {
 	confFilePath := filepath.Join(c.AppRoot, "config", ".cookie-session.json")
@@ -20,7 +20,7 @@ func (c *Core) PrepareCookieSessions() error {
 	if err != nil {
 		return err
 	}
-	if c.BackendKVDBClient == nil {
+	if c.KVDBClient == nil {
 		return errors.New("backend KVDB client not ready")
 	}
 	if c.SessionLocks == nil {
@@ -28,7 +28,7 @@ func (c *Core) PrepareCookieSessions() error {
 	}
 	mgr := &cookiesession.Manager{
 		AppName:      c.AppName,
-		KVDBClient:   c.BackendKVDBClient,
+		KVDBClient:   c.KVDBClient,
 		SessionLocks: c.SessionLocks,
 	}
 	if err = json.Unmarshal(confBytes, &mgr.Conf); err != nil {

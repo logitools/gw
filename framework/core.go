@@ -40,7 +40,7 @@ type Core struct {
 	StorageConf          storages.Conf                                    `json:"-"`          // LoadStorageConf
 	BackendHttpClient    *http.Client                                     `json:"-"`          // for requests to external apis
 	KVDBConf             kvdb.Conf                                        `json:"-"`          // loadKVDBConf
-	BackendKVDBClient    kvdb.Client                                      `json:"-"`          // prepareKVDBClient
+	KVDBClient           kvdb.Client                                      `json:"-"`          // prepareKVDBClient
 	SQLDBConfs           map[string]*sqldb.Conf                           `json:"-"`          // loadSQLDBConfs
 	BackendSQLDBClients  map[string]sqldb.Client                          `json:"-"`          // prepareSQLDBClients
 	ClientApps           atomic.Pointer[map[string]clients.ClientAppConf] `json:"-"`          // [Hot Reload] PrepareClientApps

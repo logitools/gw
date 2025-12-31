@@ -30,7 +30,7 @@ func (m *AccessToken) Wrap(inner http.Handler) http.Handler {
 			return
 		}
 		key := appCore.AppName + "_access:" + security.HashHexSHA256(accessToken)
-		uidStr, ok, err := appCore.BackendKVDBClient.Get(ctx, key)
+		uidStr, ok, err := appCore.KVDBClient.Get(ctx, key)
 		if err != nil {
 			responses.WriteSimpleErrorJSON(w, http.StatusInternalServerError, fmt.Sprintf("failed to fetch access token info. %v", err))
 			return

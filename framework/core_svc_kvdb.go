@@ -36,8 +36,8 @@ func (c *Core) loadKVDBConf() error {
 func (c *Core) prepareKVDBClient() error {
 	switch c.KVDBConf.Type {
 	case "redis":
-		c.BackendKVDBClient = &redis.Client{Conf: &c.KVDBConf}
-		if err := c.BackendKVDBClient.Init(); err != nil {
+		c.KVDBClient = &redis.Client{Conf: &c.KVDBConf}
+		if err := c.KVDBClient.Init(); err != nil {
 			return err
 		}
 	// case "memcached"
