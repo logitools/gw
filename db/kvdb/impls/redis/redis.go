@@ -54,22 +54,20 @@ func (c *Client) Exists(ctx context.Context, key string) (bool, error) {
 	return n > 0, err
 }
 
-func (c *Client) TTL(ctx context.Context, key string) (time.Duration, bool, error) {
+func (c *Client) TTL(ctx context.Context, key string) (time.Duration, kvdb.TTLState, error) {
 	cmd := c.internal.TTL(ctx, key) // *redis.DurationCmd
-	err := cmd.Err()
-	if err != nil {
-		return 0, false, err
+	if err := cmd.Err(); err != nil {
+		return 0, 0, err
 	}
 	d := cmd.Val() // time.Duration
-	if d == -2*time.Second {
-		// key does not exist
-		return 0, false, nil
+	switch d {
+	case -2 * time.Second:
+		return 0, kvdb.TTLKeyNotFound, nil
+	case -1 * time.Second:
+		return 0, kvdb.TTLPersistent, nil
+	default:
+		return d, kvdb.TTLExpiring, nil
 	}
-	// includes:
-	//  -1s  → persistent
-	//   0s  → expiring now
-	//  >0s  → normal TTL
-	return d, true, nil
 }
 
 func (c *Client) Delete(ctx context.Context, keys ...string) (int64, error) {

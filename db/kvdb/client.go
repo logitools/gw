@@ -16,8 +16,7 @@ type Client interface {
 
 	Exists(ctx context.Context, key string) (bool, error)
 	// TTL returns the remaining time-to-live for a key.
-	// -1: no expiration (persistent)
-	TTL(ctx context.Context, key string) (time.Duration, bool, error) // ttl, found, err
+	TTL(ctx context.Context, key string) (time.Duration, TTLState, error)
 	Delete(ctx context.Context, keys ...string) (int64, error)
 	// Expire sets/updates expiration for a key
 	Expire(ctx context.Context, key string, expiration time.Duration) (bool, error) // found & updated, err
