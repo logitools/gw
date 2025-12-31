@@ -16,12 +16,11 @@ type Client interface {
 
 	Exists(ctx context.Context, key string) (bool, error)
 	// TTL returns the remaining time-to-live for a key.
-	// ttl == 0: key exists, no expiration
-	TTL(ctx context.Context, key string) (time.Duration, bool, error)
+	// -1: no expiration (persistent)
+	TTL(ctx context.Context, key string) (time.Duration, bool, error) // ttl, found, err
 	Delete(ctx context.Context, keys ...string) (int64, error)
 	// Expire sets/updates expiration for a key
 	Expire(ctx context.Context, key string, expiration time.Duration) (bool, error) // found & updated, err
-
 	// Type returns the string representation of the value type stored at the given key.
 	Type(ctx context.Context, key string) (string, error)
 
