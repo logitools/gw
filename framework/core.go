@@ -42,11 +42,11 @@ type Core struct {
 	KVDBConf             kvdb.Conf                                        `json:"-"`          // loadKVDBConf
 	KVDBClient           kvdb.Client                                      `json:"-"`          // prepareKVDBClient
 	SQLDBConfs           map[string]*sqldb.Conf                           `json:"-"`          // loadSQLDBConfs
-	BackendSQLDBClients  map[string]sqldb.Client                          `json:"-"`          // prepareSQLDBClients
+	SQLDBClients         map[string]sqldb.Client                          `json:"-"`          // prepareSQLDBClients
 	ClientApps           atomic.Pointer[map[string]clients.ClientAppConf] `json:"-"`          // [Hot Reload] PrepareClientApps
 	CookieSessionManager *cookiesession.Manager                           `json:"-"`          // PrepareCookieSessions
-	MainBackendClient    *mainbackend.Client                              `json:"-"`          // PrepareMainBackendClient
 	HTMLTemplateStore    *tpl.HTMLTemplateStore                           `json:"-"`          // PrepareHTMLTemplateStore
+	MainBackendClient    *mainbackend.Client                              `json:"-"`          // PrepareMainBackendClient
 
 	services []svc.Service // Services to Manage
 	done     chan error

@@ -29,7 +29,7 @@ func (c *Core) loadSQLDBConfs() error {
 // Use after loadSQLDBConfs
 // [WARNING] sqldb.New needs to be closed. e.g. func (c *Core) ResourceCleanUp()
 func (c *Core) prepareSQLDBClients() error {
-	c.BackendSQLDBClients = make(map[string]sqldb.Client)
+	c.SQLDBClients = make(map[string]sqldb.Client)
 
 	// Registering Supported Implementations
 	pgsql.Register()
@@ -45,7 +45,7 @@ func (c *Core) prepareSQLDBClients() error {
 		if err = dbClient.Init(); err != nil {
 			return err
 		}
-		c.BackendSQLDBClients[dbName] = dbClient
+		c.SQLDBClients[dbName] = dbClient
 	}
 	return nil
 }

@@ -13,7 +13,7 @@ func (c *Core) ResourceCleanUp() {
 			log.Println("[ERROR] Failed to close KV database client")
 		}
 	}
-	for name, sqlDBClient := range c.BackendSQLDBClients {
+	for name, sqlDBClient := range c.SQLDBClients {
 		dbType := sqlDBClient.Conf().Type
 		log.Printf("[INFO][%s] Closing %q SQL DB client", dbType, name)
 		err := sqlDBClient.Close()
