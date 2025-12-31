@@ -38,7 +38,7 @@ type Core struct {
 	SessionLocks         *sync.Map                                        `json:"-"`          // map[string]*sync.Mutex for AccessTokenSessions and CookieSessions
 	ActionLocks          *sync.Map                                        `json:"-"`          // map[string]struct{}
 	StorageConf          storages.Conf                                    `json:"-"`          // LoadStorageConf
-	BackendHttpClient    *http.Client                                     `json:"-"`          // for requests to external apis
+	HttpClient           *http.Client                                     `json:"-"`          // for requests to external apis
 	KVDBConf             kvdb.Conf                                        `json:"-"`          // loadKVDBConf
 	KVDBClient           kvdb.Client                                      `json:"-"`          // prepareKVDBClient
 	SQLDBConfs           map[string]*sqldb.Conf                           `json:"-"`          // loadSQLDBConfs

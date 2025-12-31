@@ -36,6 +36,6 @@ func (c *Core) BaseInit(appRoot string, rootCtx context.Context, rootCancel cont
 func (c *Core) prepareDefaultFeatures() {
 	c.VolatileKV = &sync.Map{}
 	c.SessionLocks = &sync.Map{}
-	c.BackendHttpClient = &http.Client{}
+	c.HttpClient = &http.Client{}
 	c.ActionLocks = &sync.Map{}
 }
