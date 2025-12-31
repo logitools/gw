@@ -29,11 +29,11 @@ func (h *KvdbGetKeysHandler) Usage() string {
 
 func (h *KvdbGetKeysHandler) HandleCommand(_ []string, w io.Writer) error {
 	appCore := h.AppProvider().AppCore()
-	kvdbclient := appCore.KVDBClient
+	kvDBClient := appCore.KVDBClient
 	ctx := appCore.RootCtx
 	var cursor any = nil
 	for {
-		keys, nextCursor, err := kvdbclient.ScanKeys(ctx, cursor, 1000)
+		keys, nextCursor, err := kvDBClient.ScanKeys(ctx, cursor, 1000)
 		if err != nil {
 			return err
 		}
