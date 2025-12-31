@@ -8,27 +8,27 @@ import (
 	"github.com/logitools/gw/framework"
 )
 
-type KvdbGetTTLHandler struct {
+type KvdbGetTTL struct {
 	AppProvider framework.AppProviderFunc
 }
 
-func (h *KvdbGetTTLHandler) GroupName() string {
+func (h *KvdbGetTTL) GroupName() string {
 	return "kvdb"
 }
 
-func (h *KvdbGetTTLHandler) Command() string {
+func (h *KvdbGetTTL) Command() string {
 	return "kvdb-get-ttl"
 }
 
-func (h *KvdbGetTTLHandler) Desc() string {
+func (h *KvdbGetTTL) Desc() string {
 	return "Print TTL of the given key in KV database"
 }
 
-func (h *KvdbGetTTLHandler) Usage() string {
+func (h *KvdbGetTTL) Usage() string {
 	return h.Command() + " key"
 }
 
-func (h *KvdbGetTTLHandler) HandleCommand(args []string, w io.Writer) error {
+func (h *KvdbGetTTL) HandleCommand(args []string, w io.Writer) error {
 	argLen := len(args)
 	if argLen != 1 {
 		return fmt.Errorf("usage: %s", h.Usage())

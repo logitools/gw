@@ -7,27 +7,27 @@ import (
 	"github.com/logitools/gw/framework"
 )
 
-type KvdbGetKeysHandler struct {
+type KvdbGetKeys struct {
 	AppProvider framework.AppProviderFunc
 }
 
-func (h *KvdbGetKeysHandler) GroupName() string {
+func (h *KvdbGetKeys) GroupName() string {
 	return "kvdb"
 }
 
-func (h *KvdbGetKeysHandler) Command() string {
+func (h *KvdbGetKeys) Command() string {
 	return "kvdb-get-keys"
 }
 
-func (h *KvdbGetKeysHandler) Desc() string {
+func (h *KvdbGetKeys) Desc() string {
 	return "Print all the keys in KV database"
 }
 
-func (h *KvdbGetKeysHandler) Usage() string {
+func (h *KvdbGetKeys) Usage() string {
 	return h.Command()
 }
 
-func (h *KvdbGetKeysHandler) HandleCommand(_ []string, w io.Writer) error {
+func (h *KvdbGetKeys) HandleCommand(_ []string, w io.Writer) error {
 	appCore := h.AppProvider().AppCore()
 	kvDBClient := appCore.KVDBClient
 	ctx := appCore.RootCtx

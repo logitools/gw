@@ -7,27 +7,27 @@ import (
 	"github.com/logitools/gw/framework"
 )
 
-type KvdbGetTypeHandler struct {
+type KvdbGetType struct {
 	AppProvider framework.AppProviderFunc
 }
 
-func (h *KvdbGetTypeHandler) GroupName() string {
+func (h *KvdbGetType) GroupName() string {
 	return "kvdb"
 }
 
-func (h *KvdbGetTypeHandler) Command() string {
+func (h *KvdbGetType) Command() string {
 	return "kvdb-get-type"
 }
 
-func (h *KvdbGetTypeHandler) Desc() string {
+func (h *KvdbGetType) Desc() string {
 	return "Print the type of the given key in KV database"
 }
 
-func (h *KvdbGetTypeHandler) Usage() string {
+func (h *KvdbGetType) Usage() string {
 	return h.Command() + " key"
 }
 
-func (h *KvdbGetTypeHandler) HandleCommand(args []string, w io.Writer) error {
+func (h *KvdbGetType) HandleCommand(args []string, w io.Writer) error {
 	argLen := len(args)
 	if argLen != 1 {
 		return fmt.Errorf("usage: %s", h.Usage())
