@@ -2,7 +2,6 @@ package cookiesession
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 	"sync"
@@ -56,7 +55,7 @@ func (m *Manager) SetSessionCookie(w http.ResponseWriter, sessionID string) erro
 		// Domain: // Cannot be set with `__Host-`
 		HttpOnly: true, // JS cannot read it
 		Secure:   true, // only sent over HTTPS
-		MaxAge:   m.Conf.ExpireSliding,
+		MaxAge:   m.Conf.ExpireIn,
 		SameSite: http.SameSiteLaxMode,
 	})
 	return nil
@@ -95,7 +94,7 @@ func (m *Manager) StoreExternalTokenPairInKVDB(ctx context.Context, sessionID st
 	}
 
 	if shouldSetExp {
-		slidingExpiration := time.Duration(m.Conf.ExpireSliding) * time.Second
+		slidingExpiration := time.Duration(m.Conf.ExpireIn) * time.Second
 		_, _ = m.KVDBClient.Expire(ctx, accessTokenKey, slidingExpiration)
 		_, _ = m.KVDBClient.Expire(ctx, refreshTokenKey, slidingExpiration)
 	}
@@ -104,9 +103,9 @@ func (m *Manager) StoreExternalTokenPairInKVDB(ctx context.Context, sessionID st
 }
 
 // ExtendSlidingSession
-// ToDo: hardcap
+// ToDo: extends cookie exp, and the session list "cookie_sessions"
 func (m *Manager) ExtendSlidingSession(ctx context.Context, sessionID string, hasExternalTokens bool) {
-	slidingExpiration := time.Duration(m.Conf.ExpireSliding) * time.Second
+	slidingExpiration := time.Duration(m.Conf.ExpireIn) * time.Second
 	baseKey := m.SessionIDToKVDBKey(sessionID)
 	_, _ = m.KVDBClient.Expire(ctx, baseKey, slidingExpiration)
 	if hasExternalTokens {
@@ -145,7 +144,7 @@ func (m *Manager) StoreSessionInKVDB(ctx context.Context, uidStr string, hasExte
 		return "", err
 	}
 	// Store session_id->uid in KVDB
-	slidingExpiration := time.Duration(m.Conf.ExpireSliding) * time.Second
+	slidingExpiration := time.Duration(m.Conf.ExpireIn) * time.Second
 	key := m.SessionIDToKVDBKey(cookieSessionID)
 	if err = m.KVDBClient.Set(ctx, key, uidStr, slidingExpiration); err != nil {
 		return "", err
@@ -168,7 +167,7 @@ func (m *Manager) StoreSessionInKVDB(ctx context.Context, uidStr string, hasExte
 			_, _ = m.KVDBClient.Expire(
 				ctx,
 				usrSessionListKey,
-				time.Duration(m.Conf.ExpireSliding)*time.Second,
+				time.Duration(m.Conf.ExpireIn)*time.Second,
 			)
 		}()
 
@@ -226,16 +225,4 @@ func (m *Manager) CleanUp(ctx context.Context, usrSessionListKey string, hasExte
 
 func (m *Manager) SessionIDToUIDStrFromKVDB(ctx context.Context, sessionID string) (string, error) {
 	return SessionIDToUIDStrFromKVDB(ctx, m, sessionID)
-}
-
-func SessionIDToUIDStrFromKVDB(ctx context.Context, sessionMgr *Manager, sessionID string) (string, error) {
-	key := sessionMgr.SessionIDToKVDBKey(sessionID)
-	uidStr, ok, err := sessionMgr.KVDBClient.Get(ctx, key)
-	if err != nil {
-		return "", err
-	}
-	if !ok {
-		return "", errors.New("session not found")
-	}
-	return uidStr, nil
 }

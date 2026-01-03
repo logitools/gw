@@ -1,8 +1,10 @@
 package cookiesession
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"errors"
 	"net/http"
 	"net/url"
 )
@@ -61,4 +63,16 @@ func TryRedirectIfIntendedURICookie(w http.ResponseWriter, r *http.Request, logi
 
 	http.Redirect(w, r, decodedURI, http.StatusSeeOther)
 	return true
+}
+
+func SessionIDToUIDStrFromKVDB(ctx context.Context, sessionMgr *Manager, sessionID string) (string, error) {
+	key := sessionMgr.SessionIDToKVDBKey(sessionID)
+	uidStr, ok, err := sessionMgr.KVDBClient.Get(ctx, key)
+	if err != nil {
+		return "", err
+	}
+	if !ok {
+		return "", errors.New("session not found")
+	}
+	return uidStr, nil
 }
